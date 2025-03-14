@@ -1,0 +1,39 @@
+<ASSEMBLER_INFO>
+ <VERSION>2.2.8</VERSION>
+ <DEVICE>"ATmega328P"</DEVICE>
+ <WORKING_DIR>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\Debug</WORKING_DIR>
+ <INCLUDE_PATH>
+  <DIR>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc</DIR>
+  <DIR>C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avrassembler\Include</DIR>
+  <DIR></DIR>
+ </INCLUDE_PATH>
+ <SOURCE_FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</SOURCE_FILE>
+ <INCLUDED_FILES>
+  <FILE>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc</FILE>
+  <FILE>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc</FILE>
+ </INCLUDED_FILES>
+ <OBJECT_FILES>
+  <FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\Debug\PROYECTO 1.obj</FILE>
+ </OBJECT_FILES>
+ <HEX_FILES>
+  <FILE>PROYECTO 1.hex</FILE>
+ </HEX_FILES>
+ <OUTPUT_FILES>
+  <FILE>PROYECTO 1.map</FILE>
+  <FILE>PROYECTO 1.lss</FILE>
+ </OUTPUT_FILES>
+ <LABELS>
+  <UMIN><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>19</LINE></UMIN>
+  <DMIN><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>20</LINE></DMIN>
+  <SETUP><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>39</LINE></SETUP>
+  <ISR_PCINT1><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>148</LINE></ISR_PCINT1>
+  <MAIN><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>96</LINE></MAIN>
+  <HORA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>113</LINE></HORA>
+  <FECHA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>118</LINE></FECHA>
+  <C_HORA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>124</LINE></C_HORA>
+  <C_FECHA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>130</LINE></C_FECHA>
+  <C_ALARMA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>136</LINE></C_ALARMA>
+  <APAGAR_ALARMA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>142</LINE></APAGAR_ALARMA>
+  <F_ISR><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>161</LINE></F_ISR>
+ </LABELS>
+</ASSEMBLER_INFO>
