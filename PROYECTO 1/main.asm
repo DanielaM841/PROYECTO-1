@@ -7,13 +7,14 @@
 
 .include "M328PDEF.inc"
 //definición de variables útiles 
-.equ	T0VALUE = 217 ;numero en el que debe empezar a contar T0
+.equ	T0VALUE = 6 ;numero en el que debe empezar a contar T0
 .equ	MAX_UNI = 10 ;numero para el overflow unidades 
 .equ	MAX_DEC = 6 ;numero para el overflow decenas 
+.equ	MAXT0	= 5
 .equ	MODOS = 6 ; número máximo de modos 
-.def	CONTADOR = R21; contador para llevar el registro de los numeros 
+.def	CONTADORT0= R21; contador para llevar el registro de los transistores de los display 
 .def	MODO	= R20 ; variable para el contdor de los modos 
-
+.def	S_DISPLAY = R19
 .dseg 
 .org	SRAM_START 
 UMIN:	.byte	1 ; la variable que guarda el conteo de unidades de segundos 
@@ -26,8 +27,8 @@ DMIN:	.byte	1 ; la variable que guarda el conteo de decenas de segundos
     JMP ISR_PCINT1
 	   
 ;Aquí debería estar la interrupción del pinchange para no causar interferencia 
-//.org OVF0addr
-//    JMP TMR0_ISR ; interrupción del Timer 0 
+.org OVF0addr
+	JMP TMR0_ISR ; interrupción del Timer 0 
 
 // Configuración de la pila
 	LDI		R16, LOW(RAMEND)
@@ -68,11 +69,11 @@ SETUP:
     OUT PORTC, R16     ; Escribir en el registro PORTC
 
 	/************** HABILITAR EL TIMER   ********/
-	//CALL	INIT_TMR0 
+	CALL	INIT_TMR0 
 
-	/************** INTERRUPCIONES  *******
+	/************** INTERRUPCIONES  ********/
 	LDI		R16, (1 << TOIE0)
-    STS		TIMSK0, R16 */
+    STS		TIMSK0, R16 
 
 	// Habilitar las interrupciones para el antirebote
     LDI R16, (1<<PCINT8) | (1<<PCINT9) | (1<<PCINT10) // Habilitar pin 0, pin 1 y pin 2
@@ -81,7 +82,7 @@ SETUP:
     STS PCICR, R16
 
 	/************** INCIALIZAR VARIABLES  ********/
-	CLR		CONTADOR 
+	CLR		CONTADORT0 
 	CLR		MODO
 //	CLR		ACCION
 
@@ -163,3 +164,88 @@ F_ISR:
     OUT SREG, R16
     POP R16
     RETI
+/*************** INTERRUPCIONES DEL T0************/ 
+TMR0_ISR:
+	PUSH	R16
+	IN		R16, SREG
+	PUSH	R16
+	//Establecer los leds en apagado inicialmente 
+	CBI		PORTB, 2
+	CBI		PORTB, 3
+	CBI		PORTB, 4
+	CBI		PORTB, 5
+	INC		CONTADORT0
+	//VERIFICAR QUE NO HAYA EXEDIDO EL LÍMITE 
+	LDI		R16, MAXT0
+	CPSE	CONTADORT0, R16 //Saltar si son iguales 
+	JMP		MUX
+	LDI		CONTADORT0, 0x00
+	JMP		FIN_T0
+MUX: 
+	CPI		CONTADORT0, 0x01           ; PB2
+    BREQ	DISPLAY_1
+    CPI		CONTADORT0, 0x02           ; PB3
+    BREQ	DISPLAY_2
+    CPI		CONTADORT0, 0x03          ; PB4
+    BREQ	DISPLAY_3
+    CPI		CONTADORT0, 0x04           ; PB5
+    BREQ	DISPLAY_4
+	JMP		FIN_T0
+DISPLAY_1:
+	//ENCENDER SOLO EL TRANSISTOR NECESARIO 
+	SBI		PORTB, 2
+	//SOLO PARA PROBAR QUE EL MUX FUNCIONE    
+	LDI		ZH, HIGH(TABLA<<1)  // Carga la parte alta de la dirección de tabla en ZH
+    LDI		ZL, LOW(TABLA<<1)   // Carga la parte baja de la dirección de la tabla en ZL
+    ADIW 	ZL, 1
+    LPM		S_DISPLAY, Z
+    OUT		PORTD, S_DISPLAY
+	JMP		FIN_T0
+DISPLAY_2:
+	//ENCENDER SOLO EL TRANSISTOR NECESARIO 
+	SBI		PORTB, 3
+	//SOLO PARA PROBAR QUE EL MUX FUNCIONE 
+	LDI		ZH, HIGH(TABLA<<1)  // Carga la parte alta de la dirección de tabla en ZH
+    LDI		ZL, LOW(TABLA<<1)   // Carga la parte baja de la dirección de la tabla en ZL
+    ADIW 	ZL, 2
+    LPM		S_DISPLAY, Z
+    OUT		PORTD, S_DISPLAY
+	JMP		FIN_T0
+DISPLAY_3:
+	//ENCENDER SOLO EL TRANSISTOR NECESARIO 
+	SBI		PORTB, 4
+	//SOLO PARA PROBAR QUE EL MUX FUNCIONE 
+	LDI		ZH, HIGH(TABLA<<1)  // Carga la parte alta de la dirección de tabla en ZH
+    LDI		ZL, LOW(TABLA<<1)   // Carga la parte baja de la dirección de la tabla en ZL
+    ADIW 	ZL, 3
+    LPM		S_DISPLAY, Z
+    OUT		PORTD, S_DISPLAY
+	JMP		FIN_T0
+DISPLAY_4:
+	//ENCENDER SOLO EL TRANSISTOR NECESARIO 
+	SBI		PORTB, 5
+	//SOLO PARA PROBAR QUE EL MUX FUNCIONE 
+	LDI		ZH, HIGH(TABLA<<1)  // Carga la parte alta de la dirección de tabla en ZH
+    LDI		ZL, LOW(TABLA<<1)   // Carga la parte baja de la dirección de la tabla en ZL
+    ADIW 	ZL, 4
+    LPM		S_DISPLAY, Z
+    OUT		PORTD, S_DISPLAY
+	JMP		FIN_T0
+FIN_T0:
+    POP R16
+    OUT SREG, R16
+    POP R16
+    RETI
+
+
+/************ CONFIGURACIÓN T0 *********/ 
+INIT_TMR0:
+	LDI R16, (1<<CS01)// Configurar el prescaler en 8 
+    OUT TCCR0B, R16																																					
+    LDI R16, T0VALUE // Valor inicial de TCNT0 para un delay de 2 ms 
+    OUT TCNT0, R16
+   	RET																																																																																																				
+	
+	
+// Tabla para 7 segmentos 
+TABLA: .DB 0x7B, 0x0A, 0xB3, 0x9B, 0xCA, 0xD9, 0xF9, 0x0B, 0xFB, 0xDB, 0xEB, 0xF8, 0x71, 0xB4, 0xF1, 0xE1																																																																																																																																																																																																																																																																																																																																																																																																															
