@@ -8,27 +8,40 @@
 .include "M328PDEF.inc"
 //definición de variables útiles 
 .equ	T0VALUE = 6 ;numero en el que debe empezar a contar T0
-.equ	MAX_UNI = 10 ;numero para el overflow unidades 
-.equ	MAX_DEC = 6 ;numero para el overflow decenas 
+.equ	T1VALUE = 0x0BCD ;numero en el que debe empezar a contar T0
+.equ	MAX_UNI = 9 ;numero para el overflow unidades 
+.equ	MAX_DEC = 5 ;numero para el overflow decenas 
 .equ	MAXT0	= 5
 .equ	MODOS = 6 ; número máximo de modos 
-.def	CONTADORT0= R21; contador para llevar el registro de los transistores de los display 
-.def	MODO	= R20 ; variable para el contdor de los modos 
-.def	S_DISPLAY = R19
+.equ	CICLO = 1 ; número de ciclos del timer 1 que deben cumplirse 
+.def	CONTADORT0= R18; contador para llevar el registro de los transistores de los display 
+.def	MODO	= R19 ; variable para el contdor de los modos 
+.def	CONTADORT1L= R20
+.def	S_DISPLAY = R21
+.def	CONTADOR_TIEMPO = R22  
+.def	DISPLAYS = R23
 .dseg 
 .org	SRAM_START 
-UMIN:	.byte	1 ; la variable que guarda el conteo de unidades de segundos 
-DMIN:	.byte	1 ; la variable que guarda el conteo de decenas de segundos 
+MINUTO:		.byte	1 ; para registar que ya paso un min y debe cambiar umin 
+UMIN:		.byte	1 ; la variable que guarda el conteo de unidades de minutos 
+DMIN:		.byte	1 ; la variable que guarda el conteo de decenas de minutos 
+UHORAS:		.byte	1 ; la variable que guarda la unidades el conteo de horas 
+DHORAS:		.byte	1 ; la varible que guarda las decenas en el conteo de horas 
+DISPLAY1:	.byte	1 ;variables para guardar lo que mostrará el display según el modo
+DISPLAY2:	.byte	1 ;variables para guardar lo que mostrará el display según el modo
+DISPLAY3:	.byte	1 ;variables para guardar lo que mostrará el display según el modo
+DISPLAY4:	.byte	1 ;variables para guardar lo que mostrará el display según el modo
 
 .cseg
 .org 0x0000
     RJMP SETUP  
-.org PCI1addr
+.org PCI1addr // para el pin change
     JMP ISR_PCINT1
-	   
-;Aquí debería estar la interrupción del pinchange para no causar interferencia 
-.org OVF0addr
+.org	0x001A
+	RJMP	TMR1_ISR ; para el timer 1 
+.org OVF0addr // Para el timer 0 
 	JMP TMR0_ISR ; interrupción del Timer 0 
+
 
 // Configuración de la pila
 	LDI		R16, LOW(RAMEND)
@@ -70,10 +83,15 @@ SETUP:
 
 	/************** HABILITAR EL TIMER   ********/
 	CALL	INIT_TMR0 
-
+	CALL	INIT_TMR1
 	/************** INTERRUPCIONES  ********/
+	//timer 0
 	LDI		R16, (1 << TOIE0)
     STS		TIMSK0, R16 
+	//timer 1 
+	LDI		R16, (1<<TOIE1)
+	STS		TIMSK1, R16 
+
 
 	// Habilitar las interrupciones para el antirebote
     LDI R16, (1<<PCINT8) | (1<<PCINT9) | (1<<PCINT10) // Habilitar pin 0, pin 1 y pin 2
@@ -84,6 +102,19 @@ SETUP:
 	/************** INCIALIZAR VARIABLES  ********/
 	CLR		CONTADORT0 
 	CLR		MODO
+	CLR		CONTADORT1L
+	CLR		DISPLAYS
+	CLR		CONTADOR_TIEMPO 
+	LDI		R16, 0x00
+	STS		UMIN, R16	
+	STS		DMIN, R16	
+	STS		UHORAS, R16 
+	STS		DHORAS, R16
+	STS		MINUTO, R16
+	STS		DISPLAY1, R16	
+	STS		DISPLAY2, R16	
+	STS		DISPLAY3, R16 
+	STS		DISPLAY4, R16	
 //	CLR		ACCION
 
 	/************** ACTIVAR LAS INTERRUPCIONES GLOBALES ********/ 
@@ -95,7 +126,8 @@ SETUP:
 
 /************** MAINLOOP  ********/
 MAIN:  
-	//OUT		PORTB, CONTADOR // mostrar el valor de el contador en el puerto B   
+	//OUT		PORTB, CONTADOR // mostrar el valor de el contador en el puerto B
+	//SBI		PORTD, 2   
 	CPI		MODO, 0x00 
 	BREQ	HORA
 	CPI		MODO, 0x01 
@@ -108,18 +140,30 @@ MAIN:
 	BREQ	C_ALARMA
 	CPI		MODO, 0x05
 	BREQ	APAGAR_ALARMA
+	
     RJMP	MAIN
 
 /*************** MODOS ***********************/
 HORA:
-	CBI		PORTB, 0
+	SBI		PORTB, 0
 	CBI		PORTB, 1
+	LDS     CONTADOR_TIEMPO, UMIN  ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY1, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
+	LDS     CONTADOR_TIEMPO, DMIN ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY2, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display2
+	LDS     CONTADOR_TIEMPO, UHORAS ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY3, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display3
+	LDS     CONTADOR_TIEMPO, DHORAS ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY4, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display4
+
 	RJMP	MAIN
 
 FECHA:
 	CBI		PORTB, 0
 	CBI		PORTB, 1
 	CBI		PORTC, 3
+	LDI		R16, 0x09
+	STS		DISPLAY1, R16
 	RJMP	MAIN
 
 C_HORA:
@@ -194,40 +238,44 @@ MUX:
 DISPLAY_1:
 	//ENCENDER SOLO EL TRANSISTOR NECESARIO 
 	SBI		PORTB, 2
+	LDS		DISPLAYS, DISPLAY1 ; El registro de display tiene la salida de display 1 según el modo
 	//SOLO PARA PROBAR QUE EL MUX FUNCIONE    
 	LDI		ZH, HIGH(TABLA<<1)  // Carga la parte alta de la dirección de tabla en ZH
     LDI		ZL, LOW(TABLA<<1)   // Carga la parte baja de la dirección de la tabla en ZL
-    ADIW 	ZL, 1
+    ADD		ZL, DISPLAYS
     LPM		S_DISPLAY, Z
     OUT		PORTD, S_DISPLAY
 	JMP		FIN_T0
 DISPLAY_2:
 	//ENCENDER SOLO EL TRANSISTOR NECESARIO 
 	SBI		PORTB, 3
+	LDS		DISPLAYS, DISPLAY2
 	//SOLO PARA PROBAR QUE EL MUX FUNCIONE 
 	LDI		ZH, HIGH(TABLA<<1)  // Carga la parte alta de la dirección de tabla en ZH
     LDI		ZL, LOW(TABLA<<1)   // Carga la parte baja de la dirección de la tabla en ZL
-    ADIW 	ZL, 2
+    ADD		ZL, DISPLAYS 
     LPM		S_DISPLAY, Z
     OUT		PORTD, S_DISPLAY
 	JMP		FIN_T0
 DISPLAY_3:
 	//ENCENDER SOLO EL TRANSISTOR NECESARIO 
 	SBI		PORTB, 4
+	LDS		DISPLAYS, DISPLAY3
 	//SOLO PARA PROBAR QUE EL MUX FUNCIONE 
 	LDI		ZH, HIGH(TABLA<<1)  // Carga la parte alta de la dirección de tabla en ZH
     LDI		ZL, LOW(TABLA<<1)   // Carga la parte baja de la dirección de la tabla en ZL
-    ADIW 	ZL, 3
+    ADD		ZL, DISPLAYS
     LPM		S_DISPLAY, Z
     OUT		PORTD, S_DISPLAY
 	JMP		FIN_T0
 DISPLAY_4:
 	//ENCENDER SOLO EL TRANSISTOR NECESARIO 
 	SBI		PORTB, 5
+	LDS		DISPLAYS, DISPLAY4
 	//SOLO PARA PROBAR QUE EL MUX FUNCIONE 
 	LDI		ZH, HIGH(TABLA<<1)  // Carga la parte alta de la dirección de tabla en ZH
     LDI		ZL, LOW(TABLA<<1)   // Carga la parte baja de la dirección de la tabla en ZL
-    ADIW 	ZL, 4
+    ADD		ZL, DISPLAYS
     LPM		S_DISPLAY, Z
     OUT		PORTD, S_DISPLAY
 	JMP		FIN_T0
@@ -237,15 +285,107 @@ FIN_T0:
     POP R16
     RETI
 
+/*************** INTERRUPCIONES DEL T1************/ 
+TMR1_ISR:
+	PUSH	R16
+	IN		R16, SREG
+	PUSH	R16
+	LDI		R16, 0b00000100
+	//PAPADEO DE LOS LEDS 
+	EOR		S_DISPLAY, R16
+	OUT		PORTD, S_DISPLAY}
 
+	//Conteo de Tiempo 
+	LDS     CONTADOR_TIEMPO, MINUTO
+    INC     CONTADOR_TIEMPO
+    STS     MINUTO, CONTADOR_TIEMPO
+
+    ; Verificar si ya pasó el tiempo necesario 
+    CPI     CONTADOR_TIEMPO, CICLO	
+    BRNE    FIN_TMR1  ; Si no ha llegado salir
+	CLR		CONTADOR_TIEMPO
+	STS     MINUTO, CONTADOR_TIEMPO 
+	// SUMAR A UMIN 
+	LDS     CONTADOR_TIEMPO, UMIN 
+	CPI		CONTADOR_TIEMPO, MAX_UNI ; COMPARAR PARA VER SI SUPERO UNIDADES 
+	BREQ	OFU
+	INC		CONTADOR_TIEMPO
+	STS		UMIN, CONTADOR_TIEMPO 
+
+	JMP		FIN_TMR1
+FIN_TMR1: 
+	//CBI		PORTD, 2
+	POP		R16
+	OUT		SREG, R16
+	POP		R16
+	RETI
+OFU: 
+    LDI     CONTADOR_TIEMPO, 0x00        ; Reiniciar unidades de minutos
+    STS     UMIN, CONTADOR_TIEMPO
+    LDS     CONTADOR_TIEMPO, DMIN        ; Cargar decenas de minutos
+    CPI     CONTADOR_TIEMPO, MAX_DEC     ; Verificar si DMIN == 5
+    BREQ    OFUD                         ; Si es 5, reiniciar decenas y unidades
+    INC     CONTADOR_TIEMPO              ; Si no, incrementar DMIN
+    STS     DMIN, CONTADOR_TIEMPO
+    JMP     FIN_TMR1
+
+OFUD: 
+    LDI     CONTADOR_TIEMPO, 0x00        ; Reiniciar unidades de minutos
+    STS     UMIN, CONTADOR_TIEMPO
+    STS     DMIN, CONTADOR_TIEMPO        ; Reiniciar decenas de minutos
+
+    ; Incrementar horas
+    LDS     CONTADOR_TIEMPO, UHORAS      ; Cargar unidades de horas
+    CPI     CONTADOR_TIEMPO, MAX_UNI     ; Verificar si UHORAS == 9
+    BREQ    OFDH                         ; Si es 9, reiniciar UHORAS e incrementar DHORAS
+    INC     CONTADOR_TIEMPO              ; Si no, incrementar UHORAS
+    STS     UHORAS, CONTADOR_TIEMPO
+    JMP     FIN_TMR1
+
+OFDH:
+    LDI     CONTADOR_TIEMPO, 0x00        ; Reiniciar unidades de horas
+    STS     UHORAS, CONTADOR_TIEMPO
+    LDS     CONTADOR_TIEMPO, DHORAS      ; Cargar decenas de horas
+    CPI     CONTADOR_TIEMPO, 0x02        ; Verificar si DHORAS == 2
+    BREQ    OFT                          ; Si es 2, verificar si UHORAS == 4 (24 horas)
+    INC     CONTADOR_TIEMPO              ; Si no, incrementar DHORAS
+    STS     DHORAS, CONTADOR_TIEMPO
+    JMP     FIN_TMR1
+
+OFT: 
+    LDS     CONTADOR_TIEMPO, UHORAS      ; Cargar unidades de horas
+    CPI     CONTADOR_TIEMPO, 0x04        ; Verificar si UHORAS == 4
+    BRNE    FIN_TMR1                     ; Si no es 4, salir
+    LDS     CONTADOR_TIEMPO, DHORAS      ; Cargar decenas de horas
+    CPI     CONTADOR_TIEMPO, 0x02        ; Verificar si DHORAS == 2
+    BRNE    FIN_TMR1                     ; Si no es 2, salir
+
+    ; Reiniciar todas las variables de tiempo (24 horas)
+    LDI     CONTADOR_TIEMPO, 0x00        ; Cargar 0 en el registro
+    STS     UMIN, CONTADOR_TIEMPO        ; Reiniciar unidades de minutos
+    STS     DMIN, CONTADOR_TIEMPO        ; Reiniciar decenas de minutos
+    STS     UHORAS, CONTADOR_TIEMPO      ; Reiniciar unidades de horas
+    STS     DHORAS, CONTADOR_TIEMPO      ; Reiniciar decenas de horas
+    JMP     FIN_TMR1                     ; Salir de la interrupción
 /************ CONFIGURACIÓN T0 *********/ 
 INIT_TMR0:
-	LDI R16, (1<<CS01)// Configurar el prescaler en 8 
+	LDI R16, (1<<CS01)//Configurar el prescales en 64 bits
     OUT TCCR0B, R16																																					
     LDI R16, T0VALUE // Valor inicial de TCNT0 para un delay de 2 ms 
     OUT TCNT0, R16
    	RET																																																																																																				
-	
+INIT_TMR1:
+	LDI R16, HIGH(T1VALUE)
+	STS	TCNT1H, R16
+	LDI R16, LOW(T1VALUE)
+	STS	TCNT1L, R16
+
+	LDI	R16, 0x00
+	STS	TCCR1A, R16
+	LDI R16, (1<<CS01) // configuración para el prescaler de 8 
+    STS TCCR1B, R16																																					
+
+   	RET	
 	
 // Tabla para 7 segmentos 
-TABLA: .DB 0x7B, 0x0A, 0xB3, 0x9B, 0xCA, 0xD9, 0xF9, 0x0B, 0xFB, 0xDB, 0xEB, 0xF8, 0x71, 0xB4, 0xF1, 0xE1																																																																																																																																																																																																																																																																																																																																																																																																															
+TABLA: .DB 0x7B, 0x0A, 0xB3, 0x9B, 0xCA, 0xD9, 0xF9, 0x0B, 0xFB, 0xDB, 0xEB, 0xF8, 0x71, 0xB4, 0xF1, 0xE1							 																																																																																																																																																																																																																																																																																																																																																																																																								

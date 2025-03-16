@@ -23,26 +23,40 @@
   <FILE>PROYECTO 1.lss</FILE>
  </OUTPUT_FILES>
  <LABELS>
-  <UMIN><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>20</LINE></UMIN>
-  <DMIN><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>21</LINE></DMIN>
-  <SETUP><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>40</LINE></SETUP>
-  <ISR_PCINT1><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>149</LINE></ISR_PCINT1>
-  <TMR0_ISR><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>168</LINE></TMR0_ISR>
-  <INIT_TMR0><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>254</LINE></INIT_TMR0>
-  <MAIN><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>97</LINE></MAIN>
-  <HORA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>114</LINE></HORA>
-  <FECHA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>119</LINE></FECHA>
-  <C_HORA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>125</LINE></C_HORA>
-  <C_FECHA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>131</LINE></C_FECHA>
-  <C_ALARMA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>137</LINE></C_ALARMA>
-  <APAGAR_ALARMA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>143</LINE></APAGAR_ALARMA>
-  <F_ISR><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>162</LINE></F_ISR>
-  <MUX><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>184</LINE></MUX>
-  <FIN_T0><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>246</LINE></FIN_T0>
-  <DISPLAY_1><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>194</LINE></DISPLAY_1>
-  <DISPLAY_2><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>207</LINE></DISPLAY_2>
-  <DISPLAY_3><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>220</LINE></DISPLAY_3>
-  <DISPLAY_4><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>233</LINE></DISPLAY_4>
-  <TABLA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>263</LINE></TABLA>
+  <MINUTO><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>25</LINE></MINUTO>
+  <UMIN><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>26</LINE></UMIN>
+  <DMIN><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>27</LINE></DMIN>
+  <UHORAS><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>28</LINE></UHORAS>
+  <DHORAS><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>29</LINE></DHORAS>
+  <DISPLAY1><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>30</LINE></DISPLAY1>
+  <DISPLAY2><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>31</LINE></DISPLAY2>
+  <DISPLAY3><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>32</LINE></DISPLAY3>
+  <DISPLAY4><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>33</LINE></DISPLAY4>
+  <SETUP><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>53</LINE></SETUP>
+  <ISR_PCINT1><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>193</LINE></ISR_PCINT1>
+  <TMR1_ISR><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>289</LINE></TMR1_ISR>
+  <TMR0_ISR><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>212</LINE></TMR0_ISR>
+  <INIT_TMR0><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>371</LINE></INIT_TMR0>
+  <INIT_TMR1><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>377</LINE></INIT_TMR1>
+  <MAIN><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>128</LINE></MAIN>
+  <HORA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>147</LINE></HORA>
+  <FECHA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>161</LINE></FECHA>
+  <C_HORA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>169</LINE></C_HORA>
+  <C_FECHA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>175</LINE></C_FECHA>
+  <C_ALARMA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>181</LINE></C_ALARMA>
+  <APAGAR_ALARMA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>187</LINE></APAGAR_ALARMA>
+  <F_ISR><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>206</LINE></F_ISR>
+  <MUX><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>228</LINE></MUX>
+  <FIN_T0><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>282</LINE></FIN_T0>
+  <DISPLAY_1><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>238</LINE></DISPLAY_1>
+  <DISPLAY_2><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>249</LINE></DISPLAY_2>
+  <DISPLAY_3><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>260</LINE></DISPLAY_3>
+  <DISPLAY_4><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>271</LINE></DISPLAY_4>
+  <TABLA><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>391</LINE></TABLA>
+  <FIN_TMR1><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>316</LINE></FIN_TMR1>
+  <OFU><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>322</LINE></OFU>
+  <OFUD><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>332</LINE></OFUD>
+  <OFDH><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>345</LINE></OFDH>
+  <OFT><FILE>C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm</FILE><LINE>355</LINE></OFT>
  </LABELS>
 </ASSEMBLER_INFO>
