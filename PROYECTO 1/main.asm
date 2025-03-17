@@ -14,12 +14,13 @@
 .equ	MAXT0	= 5
 .equ	MODOS = 6 ; número máximo de modos 
 .equ	CICLO = 1 ; número de ciclos del timer 1 que deben cumplirse 
-.def	CONTADORT0= R18; contador para llevar el registro de los transistores de los display 
-.def	MODO	= R19 ; variable para el contdor de los modos 
-.def	CONTADORT1L= R20
-.def	S_DISPLAY = R21
-.def	CONTADOR_TIEMPO = R22  
-.def	DISPLAYS = R23
+.def	CONTADORT0= R17; contador para llevar el registro de los transistores de los display 
+.def	MODO	= R18 ; variable para el contdor de los modos 
+.def	CONTADORT1L= R19
+.def	S_DISPLAY = R20
+.def	CONTADOR_TIEMPO = R21  
+.def	DISPLAYS = R22
+.def	CONTADOR_BOTONES= R23
 .dseg 
 .org	SRAM_START 
 MINUTO:		.byte	1 ; para registar que ya paso un min y debe cambiar umin 
@@ -31,6 +32,17 @@ DISPLAY1:	.byte	1 ;variables para guardar lo que mostrará el display según el mo
 DISPLAY2:	.byte	1 ;variables para guardar lo que mostrará el display según el modo
 DISPLAY3:	.byte	1 ;variables para guardar lo que mostrará el display según el modo
 DISPLAY4:	.byte	1 ;variables para guardar lo que mostrará el display según el modo
+BOTON:		.byte	1 ; variable para el contador de l botón 
+U_D:		.byte	1 ; variable para selecciónar entre configuración de horas/meses o min/días 
+UD_U_H:		.byte	1 ;variable para configurar las	unidades de minutos
+UD_D_H:		.byte	1 ;variable para condigurar las	decenas de minutos 
+UD_C_H:		.byte	1 ;variable para condigurar las	unidades de horas
+UD_M_H:		.byte	1 ;variable para condigurar las	decenas de horas 
+
+UD_U_F:		.byte	1 ;variable para configurar las	unidades de minutos
+UD_D_F:		.byte	1 ;variable para condigurar las	decenas de minutos 
+UD_C_F:		.byte	1 ;variable para condigurar las	unidades de horas
+UD_M_F:		.byte	1 ;variable para condigurar las	decenas de horas 
 
 .cseg
 .org 0x0000
@@ -73,12 +85,12 @@ SETUP:
 	OUT		PORTD, R16 //Todos los bits en apagado 
 
 
-	// Configurar PC3 y PC4 como salidas, PC0-PC2 como entradas
-    LDI R16, 0x18      ; 00011000 - PC3 y PC4 como salidas, el resto entradas
+	// Configurar PC3 y PC5 como salidas, PC0-PC2 como entradas
+    LDI R16, 0b00101000       ; 00011000 - PC3 y PC5 como salidas, el resto entradas
     OUT DDRC, R16      ; Escribir en el registro DDRC
 
-    // Activar pull-ups en PC0, PC1 y PC2
-    LDI R16, 0x07      ; 00000111 - Habilita pull-ups en PC0, PC1 y PC2
+    // Activar pull-ups en PC0, PC1, PC2 y PC3
+    LDI R16, 0b00010111      ; 00000111 - Habilita pull-ups en PC0, PC1, PC2 y PC4
     OUT PORTC, R16     ; Escribir en el registro PORTC
 
 	/************** HABILITAR EL TIMER   ********/
@@ -94,7 +106,7 @@ SETUP:
 
 
 	// Habilitar las interrupciones para el antirebote
-    LDI R16, (1<<PCINT8) | (1<<PCINT9) | (1<<PCINT10) // Habilitar pin 0, pin 1 y pin 2
+    LDI R16, (1<<PCINT8) | (1<<PCINT9) | (1<<PCINT10) | (1<<PCINT12) // Habilitar pin 0, pin 1 y pin 2
     STS PCMSK1, R16       // Cargar a PCMSK1
     LDI R16, (1 << PCIE1) // Habilitar interrupciones para el pin C 
     STS PCICR, R16
@@ -105,6 +117,7 @@ SETUP:
 	CLR		CONTADORT1L
 	CLR		DISPLAYS
 	CLR		CONTADOR_TIEMPO 
+	CLR		CONTADOR_BOTONES
 	LDI		R16, 0x00
 	STS		UMIN, R16	
 	STS		DMIN, R16	
@@ -115,6 +128,15 @@ SETUP:
 	STS		DISPLAY2, R16	
 	STS		DISPLAY3, R16 
 	STS		DISPLAY4, R16	
+	STS		U_D, R16
+	STS		UD_U_H, R16	
+	STS		UD_D_H, R16 
+	STS		UD_C_H, R16
+	STS		UD_M_H, R16
+	STS		UD_U_F, R16	
+	STS		UD_D_F, R16 
+	STS		UD_C_F, R16
+	STS		UD_M_F, R16
 //	CLR		ACCION
 
 	/************** ACTIVAR LAS INTERRUPCIONES GLOBALES ********/ 
@@ -170,6 +192,15 @@ C_HORA:
 	SBI		PORTB, 0
 	CBI		PORTB, 1
 	CBI		PORTC, 3
+	//Suma y resta de los botones 
+	LDS     CONTADOR_BOTONES, UD_U_H  ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY1, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
+	LDS     CONTADOR_BOTONES, UD_D_H  ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY2, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 2
+	LDS     CONTADOR_BOTONES, UD_C_H  ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY3, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 3
+	LDS     CONTADOR_BOTONES, UD_M_H  ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY4, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
 	RJMP	MAIN
 
 C_FECHA:
@@ -181,7 +212,7 @@ C_FECHA:
 C_ALARMA:
 	CBI		PORTB, 0
 	CBI		PORTB, 1
-	SBI		PORTC, 3
+	SBI		PORTC, 4
 	RJMP	MAIN
 
 APAGAR_ALARMA:
@@ -194,21 +225,159 @@ ISR_PCINT1:
     PUSH	R16
     IN		R16, SREG
     PUSH	R16
-
-    SBIS	PINC, PC2	 // Leer si el botón de cambio de modo está en set, si lo está saltar la siguiente 
+	//Para el botón de modos 
+    SBIS	PINC, PC2	 // Leer si el botón de cambio de modo está en set, si lo está saltar la siguiente linea
+	JMP		BOTONMODO
+	SBIS	PINC, PC0
+	JMP		BOTON_SUMA
+	SBIS	PINC, PC1
+	JMP		BOTON_RESTA
+	SBIS	PINC, PC4
+	JMP		UNIDADES_DECENAS
+    JMP		F_ISR
+BOTONMODO:
 	INC		MODO
 	LDI		R16, MODOS
 	CPSE	MODO, R16 //Saltar si son iguales 
 	JMP		F_ISR
-	CLR		MODO
-    JMP		F_ISR
+	CLR		MODO ; Si el modo se pasó del limite limpiarlo y comenzar el 0 
+	JMP		F_ISR
+BOTON_SUMA:
+	CPI		MODO, 0x02 ;si el botón de suma fue el que se presionó comparar en que modo se está 
+	BREQ	SUMA_HORA 
+	CPI		MODO,0x03
+	BREQ	SUMA_FECHA
+	JMP		F_ISR
+SUMA_HORA:
+	LDS     CONTADOR_BOTONES, U_D
+	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
+	BREQ	SUMA_HORA_UNIDADES 
+	CPI		CONTADOR_BOTONES, 0x01
+	BREQ	SUMA_HORA_DECENAS
+	JMP		F_ISR
+SUMA_HORA_UNIDADES:
+	//Para solo modificar en un solo modo 
+	LDS     CONTADOR_BOTONES, UD_U_H
+	//Ahora se le suma el contador a las unidades de los min
+	CPI		CONTADOR_BOTONES,MAX_UNI
+	BREQ	OFUC
+	INC		CONTADOR_BOTONES		; incrementa la variable
+    STS     UD_U_H, CONTADOR_BOTONES
+	JMP		F_ISR
+OFUC:
+	LDI		CONTADOR_BOTONES, 0x00
+	STS     UD_U_H, CONTADOR_BOTONES ; Limpiar las unidades
+	LDS     CONTADOR_BOTONES, UD_D_H
+	INC		CONTADOR_BOTONES
+	STS     UD_D_H, CONTADOR_BOTONES
+	LDI		R16, 0x06
+	CPSE	CONTADOR_BOTONES, R16 ; Saltar la siguiente linea si son iguales 
+	JMP		F_ISR
+	CLR		CONTADOR_BOTONES
+	STS     UD_D_H, CONTADOR_BOTONES
+	JMP		F_ISR
+	
+SUMA_HORA_DECENAS:
+	LDS     CONTADOR_BOTONES, UD_C_H
+	//Ahora se le suma el contador a las unidades de los min
+	CPI		CONTADOR_BOTONES,MAX_UNI
+	BREQ	OFDC
+	INC		CONTADOR_BOTONES		; incrementa la variable
+    STS     UD_C_H, CONTADOR_BOTONES
+	JMP		F_ISR
+OFDC:
+	LDI		CONTADOR_BOTONES, 0x00
+	STS     UD_C_H, CONTADOR_BOTONES ; Limpiar las unidades
+	LDS     CONTADOR_BOTONES, UD_M_H
+	INC		CONTADOR_BOTONES
+	STS     UD_M_H, CONTADOR_BOTONES
+	LDI		R16, 0x06
+	CPSE	CONTADOR_BOTONES, R16 ; Saltar la siguiente linea si son iguales 
+	JMP		F_ISR
+	CLR		CONTADOR_BOTONES
+	STS     UD_M_H, CONTADOR_BOTONES
+	JMP		F_ISR
+SUMA_FECHA:
+	JMP		F_ISR
+BOTON_RESTA:
+	CPI		MODO, 0x02 ;si el botón de suma fue el que se presionó comparar en que modo se está 
+	JMP		RESTA_HORA 
+	CPI		MODO,0x03
+	JMP		RESTA_FECHA
+	JMP		F_ISR
 
+RESTA_HORA:
+	LDS     CONTADOR_BOTONES, U_D
+	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
+	BREQ	RESTA_HORA_UNIDADES 
+	CPI		CONTADOR_BOTONES, 0x01
+	BREQ	RESTA_HORA_DECENAS
+	JMP		F_ISR
+RESTA_HORA_UNIDADES:
+	//Para solo modificar en un solo modo 
+	LDS     CONTADOR_BOTONES, UD_U_H
+	//Ahora se le RESTA el contador a las unidades de los min
+	CPI		CONTADOR_BOTONES,0x00
+	BREQ	OUFU
+	DEC		CONTADOR_BOTONES		; incrementa la variable
+    STS     UD_U_H, CONTADOR_BOTONES
+	JMP		F_ISR
+OUFU:
+	LDI		CONTADOR_BOTONES, 0x09
+	STS     UD_U_H, CONTADOR_BOTONES ; Limpiar las unidades
+	LDS     CONTADOR_BOTONES, UD_D_H
+	CPI		CONTADOR_BOTONES, 0x00
+	BREQ	OUFU2
+	DEC		CONTADOR_BOTONES
+	STS     UD_D_H, CONTADOR_BOTONES
+	JMP		F_ISR
+OUFU2:
+	LDS     CONTADOR_BOTONES, UD_D_H
+	LDI		CONTADOR_BOTONES, 0x05
+	STS     UD_D_H, CONTADOR_BOTONES
+	JMP		F_ISR
+RESTA_HORA_DECENAS:
+	//Para solo modificar en un solo modo 
+	LDS     CONTADOR_BOTONES, UD_C_H
+	//Ahora se le RESTA el contador a las unidades de los min
+	CPI		CONTADOR_BOTONES,0x00
+	BREQ	OUFD
+	DEC		CONTADOR_BOTONES		; incrementa la variable
+    STS     UD_C_H, CONTADOR_BOTONES
+	JMP		F_ISR
+OUFD:
+	LDI		CONTADOR_BOTONES, 0x09
+	STS     UD_C_H, CONTADOR_BOTONES ; Limpiar las unidades
+	LDS     CONTADOR_BOTONES, UD_M_H
+	CPI		CONTADOR_BOTONES, 0x00
+	BREQ	OUFD2
+	DEC		CONTADOR_BOTONES
+	STS     UD_M_H, CONTADOR_BOTONES
+	JMP		F_ISR
+OUFD2:
+	LDS     CONTADOR_BOTONES, UD_M_H
+	LDI		CONTADOR_BOTONES, 0x05
+	STS     UD_M_H, CONTADOR_BOTONES
+	JMP		F_ISR
+
+UNIDADES_DECENAS: 
+	LDS     CONTADOR_BOTONES, U_D
+	INC		CONTADOR_BOTONES
+	STS     U_D, CONTADOR_BOTONES
+	LDI		R16, 0x02
+	CPSE	CONTADOR_BOTONES, R16 //Saltar si son iguales
+	JMP		F_ISR
+	CLR		CONTADOR_BOTONES
+	STS     U_D, CONTADOR_BOTONES
+	JMP		F_ISR
+RESTA_FECHA:
+	JMP		F_ISR	
 F_ISR:
     POP R16
     OUT SREG, R16
     POP R16
     RETI
-/*************** INTERRUPCIONES DEL T0************/ 
+/************************************* INTERRUPCIONES DEL T0******************************************/ 
 TMR0_ISR:
 	PUSH	R16
 	IN		R16, SREG
@@ -293,7 +462,7 @@ TMR1_ISR:
 	LDI		R16, 0b00000100
 	//PAPADEO DE LOS LEDS 
 	EOR		S_DISPLAY, R16
-	OUT		PORTD, S_DISPLAY}
+	OUT		PORTD, S_DISPLAY
 
 	//Conteo de Tiempo 
 	LDS     CONTADOR_TIEMPO, MINUTO
