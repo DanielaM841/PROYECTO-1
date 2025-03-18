@@ -21,6 +21,7 @@
 .def	CONTADOR_TIEMPO = R21  
 .def	DISPLAYS = R22
 .def	CONTADOR_BOTONES= R23
+.def	ACCION = R24 
 .dseg 
 .org	SRAM_START 
 MINUTO:		.byte	1 ; para registar que ya paso un min y debe cambiar umin 
@@ -121,8 +122,11 @@ SETUP:
 	LDI		R16, 0x00
 	STS		UMIN, R16	
 	STS		DMIN, R16	
-	STS		UHORAS, R16 
+	LDI		R16, 0x03
+	STS		UHORAS, R16
+	LDI		R16, 0x02 
 	STS		DHORAS, R16
+	LDI		R16, 0x00
 	STS		MINUTO, R16
 	STS		DISPLAY1, R16	
 	STS		DISPLAY2, R16	
@@ -137,7 +141,7 @@ SETUP:
 	STS		UD_D_F, R16 
 	STS		UD_C_F, R16
 	STS		UD_M_F, R16
-//	CLR		ACCION
+	CLR		ACCION
 
 	/************** ACTIVAR LAS INTERRUPCIONES GLOBALES ********/ 
 	SEI 
@@ -161,12 +165,14 @@ MAIN:
 	CPI		MODO, 0x04 
 	BREQ	C_ALARMA
 	CPI		MODO, 0x05
-	BREQ	APAGAR_ALARMA
+	JMP		APAGAR_ALARMA
 	
     RJMP	MAIN
 
 /*************** MODOS ***********************/
 HORA:
+	SBRC	ACCION, 0
+	CALL	INC_UMIN
 	SBI		PORTB, 0
 	CBI		PORTB, 1
 	LDS     CONTADOR_TIEMPO, UMIN  ; Tomar el valor de unidades y guardarlo en el registro 
@@ -189,6 +195,10 @@ FECHA:
 	RJMP	MAIN
 
 C_HORA:
+	SBRC	ACCION, 1
+	CALL	SUMA 
+	SBRC	ACCION, 2
+	CALL	RESTA
 	SBI		PORTB, 0
 	CBI		PORTB, 1
 	CBI		PORTC, 3
@@ -226,7 +236,7 @@ ISR_PCINT1:
     IN		R16, SREG
     PUSH	R16
 	//Para el botón de modos 
-    SBIS	PINC, PC2	 // Leer si el botón de cambio de modo está en set, si lo está saltar la siguiente linea
+    SBIS	PINC, PC2					//Leer si el botón de cambio de modo está en set, si lo está saltar la siguiente linea
 	JMP		BOTONMODO
 	SBIS	PINC, PC0
 	JMP		BOTON_SUMA
@@ -243,121 +253,12 @@ BOTONMODO:
 	CLR		MODO ; Si el modo se pasó del limite limpiarlo y comenzar el 0 
 	JMP		F_ISR
 BOTON_SUMA:
-	CPI		MODO, 0x02 ;si el botón de suma fue el que se presionó comparar en que modo se está 
-	BREQ	SUMA_HORA 
-	CPI		MODO,0x03
-	BREQ	SUMA_FECHA
-	JMP		F_ISR
-SUMA_HORA:
-	LDS     CONTADOR_BOTONES, U_D
-	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
-	BREQ	SUMA_HORA_UNIDADES 
-	CPI		CONTADOR_BOTONES, 0x01
-	BREQ	SUMA_HORA_DECENAS
-	JMP		F_ISR
-SUMA_HORA_UNIDADES:
-	//Para solo modificar en un solo modo 
-	LDS     CONTADOR_BOTONES, UD_U_H
-	//Ahora se le suma el contador a las unidades de los min
-	CPI		CONTADOR_BOTONES,MAX_UNI
-	BREQ	OFUC
-	INC		CONTADOR_BOTONES		; incrementa la variable
-    STS     UD_U_H, CONTADOR_BOTONES
-	JMP		F_ISR
-OFUC:
-	LDI		CONTADOR_BOTONES, 0x00
-	STS     UD_U_H, CONTADOR_BOTONES ; Limpiar las unidades
-	LDS     CONTADOR_BOTONES, UD_D_H
-	INC		CONTADOR_BOTONES
-	STS     UD_D_H, CONTADOR_BOTONES
-	LDI		R16, 0x06
-	CPSE	CONTADOR_BOTONES, R16 ; Saltar la siguiente linea si son iguales 
-	JMP		F_ISR
-	CLR		CONTADOR_BOTONES
-	STS     UD_D_H, CONTADOR_BOTONES
-	JMP		F_ISR
-	
-SUMA_HORA_DECENAS:
-	LDS     CONTADOR_BOTONES, UD_C_H
-	//Ahora se le suma el contador a las unidades de los min
-	CPI		CONTADOR_BOTONES,MAX_UNI
-	BREQ	OFDC
-	INC		CONTADOR_BOTONES		; incrementa la variable
-    STS     UD_C_H, CONTADOR_BOTONES
-	JMP		F_ISR
-OFDC:
-	LDI		CONTADOR_BOTONES, 0x00
-	STS     UD_C_H, CONTADOR_BOTONES ; Limpiar las unidades
-	LDS     CONTADOR_BOTONES, UD_M_H
-	INC		CONTADOR_BOTONES
-	STS     UD_M_H, CONTADOR_BOTONES
-	LDI		R16, 0x06
-	CPSE	CONTADOR_BOTONES, R16 ; Saltar la siguiente linea si son iguales 
-	JMP		F_ISR
-	CLR		CONTADOR_BOTONES
-	STS     UD_M_H, CONTADOR_BOTONES
-	JMP		F_ISR
-SUMA_FECHA:
+	LDI		R16, 0b00000010
+	EOR		ACCION, R16
 	JMP		F_ISR
 BOTON_RESTA:
-	CPI		MODO, 0x02 ;si el botón de suma fue el que se presionó comparar en que modo se está 
-	JMP		RESTA_HORA 
-	CPI		MODO,0x03
-	JMP		RESTA_FECHA
-	JMP		F_ISR
-
-RESTA_HORA:
-	LDS     CONTADOR_BOTONES, U_D
-	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
-	BREQ	RESTA_HORA_UNIDADES 
-	CPI		CONTADOR_BOTONES, 0x01
-	BREQ	RESTA_HORA_DECENAS
-	JMP		F_ISR
-RESTA_HORA_UNIDADES:
-	//Para solo modificar en un solo modo 
-	LDS     CONTADOR_BOTONES, UD_U_H
-	//Ahora se le RESTA el contador a las unidades de los min
-	CPI		CONTADOR_BOTONES,0x00
-	BREQ	OUFU
-	DEC		CONTADOR_BOTONES		; incrementa la variable
-    STS     UD_U_H, CONTADOR_BOTONES
-	JMP		F_ISR
-OUFU:
-	LDI		CONTADOR_BOTONES, 0x09
-	STS     UD_U_H, CONTADOR_BOTONES ; Limpiar las unidades
-	LDS     CONTADOR_BOTONES, UD_D_H
-	CPI		CONTADOR_BOTONES, 0x00
-	BREQ	OUFU2
-	DEC		CONTADOR_BOTONES
-	STS     UD_D_H, CONTADOR_BOTONES
-	JMP		F_ISR
-OUFU2:
-	LDS     CONTADOR_BOTONES, UD_D_H
-	LDI		CONTADOR_BOTONES, 0x05
-	STS     UD_D_H, CONTADOR_BOTONES
-	JMP		F_ISR
-RESTA_HORA_DECENAS:
-	//Para solo modificar en un solo modo 
-	LDS     CONTADOR_BOTONES, UD_C_H
-	//Ahora se le RESTA el contador a las unidades de los min
-	CPI		CONTADOR_BOTONES,0x00
-	BREQ	OUFD
-	DEC		CONTADOR_BOTONES		; incrementa la variable
-    STS     UD_C_H, CONTADOR_BOTONES
-	JMP		F_ISR
-OUFD:
-	LDI		CONTADOR_BOTONES, 0x09
-	STS     UD_C_H, CONTADOR_BOTONES ; Limpiar las unidades
-	LDS     CONTADOR_BOTONES, UD_M_H
-	CPI		CONTADOR_BOTONES, 0x00
-	BREQ	OUFD2
-	DEC		CONTADOR_BOTONES
-	STS     UD_M_H, CONTADOR_BOTONES
-	JMP		F_ISR
-OUFD2:
-	LDS     CONTADOR_BOTONES, UD_M_H
-	LDI		CONTADOR_BOTONES, 0x05
-	STS     UD_M_H, CONTADOR_BOTONES
+	LDI		R16, 0b00000100
+	EOR		ACCION, R16
 	JMP		F_ISR
 
 UNIDADES_DECENAS: 
@@ -370,13 +271,142 @@ UNIDADES_DECENAS:
 	CLR		CONTADOR_BOTONES
 	STS     U_D, CONTADOR_BOTONES
 	JMP		F_ISR
-RESTA_FECHA:
-	JMP		F_ISR	
+//FIN DE LA INTERRUPCIÓN 
 F_ISR:
     POP R16
     OUT SREG, R16
     POP R16
     RETI
+//SUBRUTINAS PARA EL BOTÓN DE SUMA 
+SUMA: 
+	LDI		R16, 0b00000010
+	EOR		ACCION, R16
+	CPI		MODO, 0x02 ;si el botón de suma fue el que se presionó comparar en que modo se está 
+	BREQ	SUMA_HORA 
+	CPI		MODO,0x03
+	BREQ	SUMA_FECHA
+	JMP		RETORNO_BOTON
+SUMA_HORA:
+	LDS     CONTADOR_BOTONES, U_D
+	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
+	BREQ	SUMA_HORA_UNIDADES 
+	CPI		CONTADOR_BOTONES, 0x01
+	BREQ	SUMA_HORA_DECENAS
+	JMP		RETORNO_BOTON
+SUMA_HORA_UNIDADES:
+	//Para solo modificar en un solo modo 
+	LDS     CONTADOR_BOTONES, UD_U_H
+	//Ahora se le suma el contador a las unidades de los min
+	CPI		CONTADOR_BOTONES,MAX_UNI
+	BREQ	OFUC
+	INC		CONTADOR_BOTONES		; incrementa la variable
+    STS     UD_U_H, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+OFUC:
+	LDI		CONTADOR_BOTONES, 0x00
+	STS     UD_U_H, CONTADOR_BOTONES ; Limpiar las unidades
+	LDS     CONTADOR_BOTONES, UD_D_H
+	INC		CONTADOR_BOTONES
+	STS     UD_D_H, CONTADOR_BOTONES
+	LDI		R16, 0x06
+	CPSE	CONTADOR_BOTONES, R16 ; Saltar la siguiente linea si son iguales 
+	JMP		RETORNO_BOTON
+	CLR		CONTADOR_BOTONES
+	STS     UD_D_H, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+	
+SUMA_HORA_DECENAS:
+	LDS     CONTADOR_BOTONES, UD_C_H
+	//Ahora se le suma el contador a las unidades de los min
+	CPI		CONTADOR_BOTONES,MAX_UNI
+	BREQ	OFDC
+	INC		CONTADOR_BOTONES		; incrementa la variable
+    STS     UD_C_H, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+OFDC:
+	LDI		CONTADOR_BOTONES, 0x00
+	STS     UD_C_H, CONTADOR_BOTONES ; Limpiar las unidades
+	LDS     CONTADOR_BOTONES, UD_M_H
+	INC		CONTADOR_BOTONES
+	STS     UD_M_H, CONTADOR_BOTONES
+	LDI		R16, 0x06
+	CPSE	CONTADOR_BOTONES, R16 ; Saltar la siguiente linea si son iguales 
+	JMP		RETORNO_BOTON
+	CLR		CONTADOR_BOTONES
+	STS     UD_M_H, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+SUMA_FECHA:
+	JMP		RETORNO_BOTON
+//SUBRUTINAS PARA EL BOTÓN DE RESTA 
+
+RESTA: 
+	LDI		R16, 0b00000100
+	EOR		ACCION, R16
+	CPI		MODO, 0x02 ;si el botón de suma fue el que se presionó comparar en que modo se está 
+	BREQ		RESTA_HORA 
+	CPI		MODO,0x03
+	BREQ	RESTA_FECHA
+	JMP		RETORNO_BOTON
+
+RESTA_FECHA:
+	JMP		RETORNO_BOTON	
+RESTA_HORA:
+	LDS     CONTADOR_BOTONES, U_D
+	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
+	BREQ	RESTA_HORA_UNIDADES 
+	CPI		CONTADOR_BOTONES, 0x01
+	BREQ	RESTA_HORA_DECENAS
+	JMP		RETORNO_BOTON
+RESTA_HORA_UNIDADES:
+	//Para solo modificar en un solo modo 
+	LDS     CONTADOR_BOTONES, UD_U_H
+	//Ahora se le RESTA el contador a las unidades de los min
+	CPI		CONTADOR_BOTONES,0x00
+	BREQ	OUFU
+	DEC		CONTADOR_BOTONES		; incrementa la variable
+    STS     UD_U_H, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+OUFU:
+	LDI		CONTADOR_BOTONES, 0x09
+	STS     UD_U_H, CONTADOR_BOTONES ; Limpiar las unidades
+	LDS     CONTADOR_BOTONES, UD_D_H
+	CPI		CONTADOR_BOTONES, 0x00
+	BREQ	OUFU2
+	DEC		CONTADOR_BOTONES
+	STS     UD_D_H, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+OUFU2:
+	LDS     CONTADOR_BOTONES, UD_D_H
+	LDI		CONTADOR_BOTONES, 0x05
+	STS     UD_D_H, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+RESTA_HORA_DECENAS:
+	//Para solo modificar en un solo modo 
+	LDS     CONTADOR_BOTONES, UD_C_H
+	//Ahora se le RESTA el contador a las unidades de los min
+	CPI		CONTADOR_BOTONES,0x00
+	BREQ	OUFD
+	DEC		CONTADOR_BOTONES		; incrementa la variable
+    STS     UD_C_H, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+OUFD:
+	LDI		CONTADOR_BOTONES, 0x09
+	STS     UD_C_H, CONTADOR_BOTONES ; Limpiar las unidades
+	LDS     CONTADOR_BOTONES, UD_M_H
+	CPI		CONTADOR_BOTONES, 0x00
+	BREQ	OUFD2
+	DEC		CONTADOR_BOTONES
+	STS     UD_M_H, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+OUFD2:
+	LDS     CONTADOR_BOTONES, UD_M_H
+	LDI		CONTADOR_BOTONES, 0x05
+	STS     UD_M_H, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+
+
+RETORNO_BOTON:
+	RET
 /************************************* INTERRUPCIONES DEL T0******************************************/ 
 TMR0_ISR:
 	PUSH	R16
@@ -474,20 +504,28 @@ TMR1_ISR:
     BRNE    FIN_TMR1  ; Si no ha llegado salir
 	CLR		CONTADOR_TIEMPO
 	STS     MINUTO, CONTADOR_TIEMPO 
+	//Resetear la bandera
+	LDI		R16, 0x01
+	EOR		ACCION, R16
+	JMP		FIN_TMR1
+FIN_TMR1: 
+	POP		R16
+	OUT		SREG, R16
+	POP		R16
+	RETI
+
+INC_UMIN: 
+	//Resetear la bandera
+	LDI		R16, 0x01
+	EOR		ACCION, R16
 	// SUMAR A UMIN 
 	LDS     CONTADOR_TIEMPO, UMIN 
 	CPI		CONTADOR_TIEMPO, MAX_UNI ; COMPARAR PARA VER SI SUPERO UNIDADES 
 	BREQ	OFU
 	INC		CONTADOR_TIEMPO
 	STS		UMIN, CONTADOR_TIEMPO 
+	JMP     RETORNOH
 
-	JMP		FIN_TMR1
-FIN_TMR1: 
-	//CBI		PORTD, 2
-	POP		R16
-	OUT		SREG, R16
-	POP		R16
-	RETI
 OFU: 
     LDI     CONTADOR_TIEMPO, 0x00        ; Reiniciar unidades de minutos
     STS     UMIN, CONTADOR_TIEMPO
@@ -496,7 +534,7 @@ OFU:
     BREQ    OFUD                         ; Si es 5, reiniciar decenas y unidades
     INC     CONTADOR_TIEMPO              ; Si no, incrementar DMIN
     STS     DMIN, CONTADOR_TIEMPO
-    JMP     FIN_TMR1
+    JMP     RETORNOH
 
 OFUD: 
     LDI     CONTADOR_TIEMPO, 0x00        ; Reiniciar unidades de minutos
@@ -509,7 +547,7 @@ OFUD:
     BREQ    OFDH                         ; Si es 9, reiniciar UHORAS e incrementar DHORAS
     INC     CONTADOR_TIEMPO              ; Si no, incrementar UHORAS
     STS     UHORAS, CONTADOR_TIEMPO
-    JMP     FIN_TMR1
+    JMP     RETORNOH
 
 OFDH:
     LDI     CONTADOR_TIEMPO, 0x00        ; Reiniciar unidades de horas
@@ -519,23 +557,21 @@ OFDH:
     BREQ    OFT                          ; Si es 2, verificar si UHORAS == 4 (24 horas)
     INC     CONTADOR_TIEMPO              ; Si no, incrementar DHORAS
     STS     DHORAS, CONTADOR_TIEMPO
-    JMP     FIN_TMR1
+    JMP     RETORNOH
 
 OFT: 
     LDS     CONTADOR_TIEMPO, UHORAS      ; Cargar unidades de horas
     CPI     CONTADOR_TIEMPO, 0x04        ; Verificar si UHORAS == 4
-    BRNE    FIN_TMR1                     ; Si no es 4, salir
-    LDS     CONTADOR_TIEMPO, DHORAS      ; Cargar decenas de horas
-    CPI     CONTADOR_TIEMPO, 0x02        ; Verificar si DHORAS == 2
-    BRNE    FIN_TMR1                     ; Si no es 2, salir
+    BRNE    RETORNOH                     ; Si no es 4, salir
 
     ; Reiniciar todas las variables de tiempo (24 horas)
     LDI     CONTADOR_TIEMPO, 0x00        ; Cargar 0 en el registro
     STS     UMIN, CONTADOR_TIEMPO        ; Reiniciar unidades de minutos
     STS     DMIN, CONTADOR_TIEMPO        ; Reiniciar decenas de minutos
     STS     UHORAS, CONTADOR_TIEMPO      ; Reiniciar unidades de horas
-    STS     DHORAS, CONTADOR_TIEMPO      ; Reiniciar decenas de horas
-    JMP     FIN_TMR1                     ; Salir de la interrupción
+    STS     DHORAS, CONTADOR_TIEMPO      ; Reiniciar decenas de horas      
+RETORNOH:
+	RET
 /************ CONFIGURACIÓN T0 *********/ 
 INIT_TMR0:
 	LDI R16, (1<<CS01)//Configurar el prescales en 64 bits
