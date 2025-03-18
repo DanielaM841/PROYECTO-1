@@ -337,19 +337,28 @@ OFDC:
 	JMP		RETORNO_BOTON
 SUMA_FECHA:
 	JMP		RETORNO_BOTON
+//Retorno, se colocó aquí para lograr hacer los saltos con JMP y BRNE 
+RETORNO_BOTON:
+	RET
 //SUBRUTINAS PARA EL BOTÓN DE RESTA 
 
-RESTA: 
-	LDI		R16, 0b00000100
-	EOR		ACCION, R16
-	CPI		MODO, 0x02 ;si el botón de suma fue el que se presionó comparar en que modo se está 
-	BREQ		RESTA_HORA 
-	CPI		MODO,0x03
-	BREQ	RESTA_FECHA
-	JMP		RETORNO_BOTON
+RESTA:    
+    LDI     R16, 0b00000100      ; Cargar el valor en R16
+    EOR     ACCION, R16          ; Alternar el bit correspondiente en ACCION
+    JMP     VERIFICAR_MODO       ; Saltar a la lógica de comparación
 
-RESTA_FECHA:
-	JMP		RETORNO_BOTON	
+VERIFICAR_MODO:
+    ; Comprobar si MODO == 0x02
+    CPI     MODO, 0x02           
+    BRNE    VERIFICAR_FECHA      ; Si no es igual, verificar la siguiente condición
+    JMP     RESTA_HORA           ; Si es igual, saltar a RESTA_HORA
+
+VERIFICAR_FECHA:
+    ; Comprobar si MODO == 0x03
+    CPI     MODO, 0x03
+    BRNE    RETORNO_BOTON        ; Si no es igual, regresar
+    JMP     RESTA_FECHA          ; Si es igual, saltar a RESTA_FECHA
+
 RESTA_HORA:
 	LDS     CONTADOR_BOTONES, U_D
 	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
@@ -404,9 +413,9 @@ OUFD2:
 	STS     UD_M_H, CONTADOR_BOTONES
 	JMP		RETORNO_BOTON
 
+RESTA_FECHA:
+	JMP		RETORNO_BOTON	
 
-RETORNO_BOTON:
-	RET
 /************************************* INTERRUPCIONES DEL T0******************************************/ 
 TMR0_ISR:
 	PUSH	R16
