@@ -122,7 +122,7 @@ SETUP:
 	LDI		R16, 0x00
 	STS		UMIN, R16	
 	STS		DMIN, R16	
-	LDI		R16, 0x03
+	LDI		R16, 0x02
 	STS		UHORAS, R16
 	LDI		R16, 0x02 
 	STS		DHORAS, R16
@@ -163,7 +163,7 @@ MAIN:
 	CPI		MODO, 0x03 
 	BREQ	C_FECHA
 	CPI		MODO, 0x04 
-	BREQ	C_ALARMA
+	JMP		C_ALARMA
 	CPI		MODO, 0x05
 	JMP		APAGAR_ALARMA
 	
@@ -217,6 +217,19 @@ C_FECHA:
 	CBI		PORTB, 0
 	SBI		PORTB, 1
 	CBI		PORTC, 3
+	SBRC	ACCION, 1
+	CALL	SUMA 
+	SBRC	ACCION, 2
+	CALL	RESTA
+	//Suma y resta de los botones 
+	LDS     CONTADOR_BOTONES, UD_U_F  ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY1, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
+	LDS     CONTADOR_BOTONES, UD_D_F  ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY2, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 2
+	LDS     CONTADOR_BOTONES, UD_C_F  ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY3, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 3
+	LDS     CONTADOR_BOTONES, UD_M_F  ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY4, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
 	RJMP	MAIN
 
 C_ALARMA:
@@ -278,14 +291,23 @@ F_ISR:
     POP R16
     RETI
 //SUBRUTINAS PARA EL BOTÓN DE SUMA 
-SUMA: 
-	LDI		R16, 0b00000010
-	EOR		ACCION, R16
-	CPI		MODO, 0x02 ;si el botón de suma fue el que se presionó comparar en que modo se está 
-	BREQ	SUMA_HORA 
-	CPI		MODO,0x03
-	BREQ	SUMA_FECHA
-	JMP		RETORNO_BOTON
+SUMA:    
+    LDI     R16, 0b00000010   ; Cargar el valor en R16
+    EOR     ACCION, R16       ; Alternar el bit correspondiente en ACCION
+    
+    ; Comprobar si MODO == 0x02
+    CPI     MODO, 0x02
+    BRNE    VERIFICAR_FECHA1   ; Si no es igual, verificar la siguiente condición
+    JMP     SUMA_HORA         ; Si es igual, saltar a SUMA_HORA
+
+VERIFICAR_FECHA1:
+    ; Comprobar si MODO == 0x03
+    CPI     MODO, 0x03
+    BRNE    LLAMAR_RETORNO    ; Si no es igual, saltar a retorno largo
+    JMP     SUMA_FECHA        ; Si es igual, saltar a SUMA_FECHA
+
+LLAMAR_RETORNO:
+    JMP     RETORNO_BOTON     ; Usar JMP para saltar a cualquier parte del código
 SUMA_HORA:
 	LDS     CONTADOR_BOTONES, U_D
 	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
@@ -336,7 +358,52 @@ OFDC:
 	STS     UD_M_H, CONTADOR_BOTONES
 	JMP		RETORNO_BOTON
 SUMA_FECHA:
+	LDS     CONTADOR_BOTONES, U_D
+	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
+	BREQ	SUMA_FECHA_UNIDADES 
+	CPI		CONTADOR_BOTONES, 0x01
+	BREQ	SUMA_FECHA_DECENAS
 	JMP		RETORNO_BOTON
+SUMA_FECHA_UNIDADES:
+	//Para solo modificar en un solo modo 
+	LDS     CONTADOR_BOTONES, UD_D_F
+    CPI		CONTADOR_BOTONES, 0x01
+    BRNE    OFU_MESES
+	LDS     CONTADOR_BOTONES, UD_U_F
+    CPI		CONTADOR_BOTONES, 0x02
+	BRNE    MAX_FIN
+	CLR		CONTADOR_BOTONES
+	STS     UD_U_F, CONTADOR_BOTONES
+	STS     UD_D_F, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+	
+OFU_MESES: 
+    // Incrementar decenas Y VERIFICA SI NO ES 1 
+	LDS     CONTADOR_BOTONES, UD_U_F
+	//Ahora se le suma el contador a las unidades de los min
+	CPI		CONTADOR_BOTONES,MAX_UNI
+	BREQ	MAX_D
+	INC		CONTADOR_BOTONES		; incrementa la variable
+    STS     UD_U_F, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+
+	
+MAX_FIN: 
+	LDS     CONTADOR_BOTONES, UD_U_F
+	INC		CONTADOR_BOTONES
+	STS     UD_U_F, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+MAX_D:
+	LDI     CONTADOR_BOTONES, 0x00
+    STS     UD_U_F, CONTADOR_BOTONES ;LIMPIAR UNIDADES 
+    LDS     CONTADOR_BOTONES, UD_D_F
+	INC		CONTADOR_BOTONES
+	STS     UD_D_F, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+
+SUMA_FECHA_DECENAS: 
+	JMP		RETORNO_BOTON 
+	
 //Retorno, se colocó aquí para lograr hacer los saltos con JMP y BRNE 
 RETORNO_BOTON:
 	RET
@@ -540,45 +607,49 @@ OFU:
     STS     UMIN, CONTADOR_TIEMPO
     LDS     CONTADOR_TIEMPO, DMIN        ; Cargar decenas de minutos
     CPI     CONTADOR_TIEMPO, MAX_DEC     ; Verificar si DMIN == 5
-    BREQ    OFUD                         ; Si es 5, reiniciar decenas y unidades
+    BREQ    OFDH                         ; Si es 5, reiniciar decenas y unidades
     INC     CONTADOR_TIEMPO              ; Si no, incrementar DMIN
     STS     DMIN, CONTADOR_TIEMPO
     JMP     RETORNOH
-
-OFUD: 
+OFDH:
     LDI     CONTADOR_TIEMPO, 0x00        ; Reiniciar unidades de minutos
     STS     UMIN, CONTADOR_TIEMPO
     STS     DMIN, CONTADOR_TIEMPO        ; Reiniciar decenas de minutos
-
-    ; Incrementar horas
-    LDS     CONTADOR_TIEMPO, UHORAS      ; Cargar unidades de horas
-    CPI     CONTADOR_TIEMPO, MAX_UNI     ; Verificar si UHORAS == 9
-    BREQ    OFDH                         ; Si es 9, reiniciar UHORAS e incrementar DHORAS
-    INC     CONTADOR_TIEMPO              ; Si no, incrementar UHORAS
-    STS     UHORAS, CONTADOR_TIEMPO
-    JMP     RETORNOH
-
-OFDH:
-    LDI     CONTADOR_TIEMPO, 0x00        ; Reiniciar unidades de horas
-    STS     UHORAS, CONTADOR_TIEMPO
     LDS     CONTADOR_TIEMPO, DHORAS      ; Cargar decenas de horas
     CPI     CONTADOR_TIEMPO, 0x02        ; Verificar si DHORAS == 2
-    BREQ    OFT                          ; Si es 2, verificar si UHORAS == 4 (24 horas)
-    INC     CONTADOR_TIEMPO              ; Si no, incrementar DHORAS
-    STS     DHORAS, CONTADOR_TIEMPO
+    BRNE	OFT		  ; Si es 2, verificar si UHORAS == 4 (24 horas)
+	LDS     CONTADOR_TIEMPO, UHORAS
+    CPI		CONTADOR_TIEMPO,  0x03
+	BRNE    MAX_FIN_DIA ; MIENTRAS NO SEA 4 IR A LA FUNCION 
+	CLR		CONTADOR_TIEMPO
+	STS     UMIN, CONTADOR_TIEMPO
+	STS     DMIN, CONTADOR_TIEMPO
+	STS     UHORAS, CONTADOR_TIEMPO
+	STS     DHORAS, CONTADOR_TIEMPO
     JMP     RETORNOH
 
 OFT: 
-    LDS     CONTADOR_TIEMPO, UHORAS      ; Cargar unidades de horas
-    CPI     CONTADOR_TIEMPO, 0x04        ; Verificar si UHORAS == 4
-    BRNE    RETORNOH                     ; Si no es 4, salir
+    // Incrementar decenas 
+	LDS     CONTADOR_TIEMPO, UHORAS
+	//Ahora se le suma el contador a las unidades de los min
+	CPI		CONTADOR_TIEMPO, MAX_UNI
+	BREQ	MAX_D_TIEMPO
+	INC		CONTADOR_TIEMPO 		; incrementa la variable
+    STS     UHORAS, CONTADOR_TIEMPO
+	JMP     RETORNOH
+MAX_D_TIEMPO: 
+	LDI     CONTADOR_TIEMPO, 0x00
+    STS     UHORAS, CONTADOR_TIEMPO ;LIMPIAR UNIDADES 
+    LDS     CONTADOR_TIEMPO,  DHORAS
+	INC		CONTADOR_TIEMPO 
+	STS     DHORAS, CONTADOR_TIEMPO
+	JMP		RETORNOH
+MAX_FIN_DIA:
+	LDS     CONTADOR_TIEMPO, UHORAS
+	INC		CONTADOR_TIEMPO
+	STS     UHORAS, CONTADOR_TIEMPO
+	JMP		RETORNOH
 
-    ; Reiniciar todas las variables de tiempo (24 horas)
-    LDI     CONTADOR_TIEMPO, 0x00        ; Cargar 0 en el registro
-    STS     UMIN, CONTADOR_TIEMPO        ; Reiniciar unidades de minutos
-    STS     DMIN, CONTADOR_TIEMPO        ; Reiniciar decenas de minutos
-    STS     UHORAS, CONTADOR_TIEMPO      ; Reiniciar unidades de horas
-    STS     DHORAS, CONTADOR_TIEMPO      ; Reiniciar decenas de horas      
 RETORNOH:
 	RET
 /************ CONFIGURACIÓN T0 *********/ 
