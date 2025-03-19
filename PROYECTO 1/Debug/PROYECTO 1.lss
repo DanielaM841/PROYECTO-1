@@ -1,5 +1,5 @@
 
-AVRASM ver. 2.2.8  C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm Wed Mar 19 11:59:50 2025
+AVRASM ver. 2.2.8  C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm Wed Mar 19 13:35:40 2025
 
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc'
 C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm(8): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc'
@@ -1080,11 +1080,11 @@ C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm(8): Including
                                  .org 0x0000
 000000 c025                          RJMP SETUP  
                                  .org PCI1addr // para el pin change
-000008 940c 00e4                     JMP ISR_PCINT1
+000008 940c 0102                     JMP ISR_PCINT1
                                  .org	0x001A
-00001a c21e                      	RJMP	TMR1_ISR ; para el timer 1 
+00001a c24a                      	RJMP	TMR1_ISR ; para el timer 1 
                                  .org OVF0addr // Para el timer 0 
-000020 940c 01f4                 	JMP TMR0_ISR ; interrupción del Timer 0 
+000020 940c 0220                 	JMP TMR0_ISR ; interrupción del Timer 0 
                                  
                                  
                                  // Configuración de la pila
@@ -1126,8 +1126,8 @@ C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm(8): Including
 000038 b908                          OUT PORTC, R16     ; Escribir en el registro PORTC
                                  
                                  	/************** HABILITAR EL TIMER   ********/
-000039 940e 029b                 	CALL	INIT_TMR0 
-00003b 940e 02a0                 	CALL	INIT_TMR1
+000039 940e 02c7                 	CALL	INIT_TMR0 
+00003b 940e 02cc                 	CALL	INIT_TMR1
                                  	/************** INTERRUPCIONES  ********/
                                  	//timer 0
 00003d e001                      	LDI		R16, (1 << TOIE0)
@@ -1145,7 +1145,7 @@ C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm(8): Including
                                  
                                  	/************** INCIALIZAR VARIABLES  ********/
 000049 2711                      	CLR		CONTADORT0 
-00004a 2722                      	CLR		MODO
+00004a e020                      	LDI		MODO, 0x00
 00004b 2733                      	CLR		CONTADORT1L
 00004c 2766                      	CLR		DISPLAYS
 00004d 2755                      	CLR		CONTADOR_TIEMPO 
@@ -1184,552 +1184,592 @@ C:\Users\Lenovo\Desktop\Dany\Micros\PROYECTO-1\PROYECTO 1\main.asm(8): Including
                                  /************** MAINLOOP  ********/
                                  MAIN:  
                                  	//OUT		PORTB, CONTADOR // mostrar el valor de el contador en el puerto B
-                                 	//SBI		PORTD, 2   
-00007c 3020                      	CPI		MODO, 0x00 
-00007d f069                      	BREQ	HORA
-00007e 3021                      	CPI		MODO, 0x01 
-00007f f109                      	BREQ	FECHA
-000080 3022                      	CPI		MODO, 0x02
-000081 f131                      	BREQ	C_HORA
-000082 3023                      	CPI		MODO, 0x03 
-000083 f1f1                      	BREQ	C_FECHA
-000084 3024                      	CPI		MODO, 0x04 
-000085 940c 00dc                 	JMP		C_ALARMA
-000087 3025                      	CPI		MODO, 0x05
-000088 940c 00e0                 	JMP		APAGAR_ALARMA
-                                 	
-00008a cff1                          RJMP	MAIN
+                                 	//SBI		PORTD, 2  
+00007c 3025                      	CPI		MODO, 0x05
+00007d f0c1                      	BREQ	APAGAR_ALARMA_S 
+00007e 3020                      	CPI		MODO, 0x00 
+00007f f061                      	BREQ	HORA_S
+000080 3021                      	CPI		MODO, 0x01 
+000081 f061                      	BREQ	FECHA_S
+000082 3022                      	CPI		MODO, 0x02
+000083 f061                      	BREQ	C_HORA_S
+000084 3023                      	CPI		MODO, 0x03 
+000085 f061                      	BREQ	C_FECHA_S
+000086 3024                      	CPI		MODO, 0x04 
+000087 940c 0094                 	JMP		C_ALARMA_S
+000089 3025                      	CPI		MODO, 0x05
+00008a f059                      	BREQ	APAGAR_ALARMA_S
+00008b cff0                          RJMP	MAIN
                                  
+                                 
+                                 /***************** FUNCIONES PARA SALTOS MÁS LARGOS*****************/
+                                 HORA_S:
+00008c 940c 0098                 	JMP		HORA
+                                 FECHA_S:
+00008e 940c 00af                 	JMP		FECHA
+                                 C_HORA_S:
+000090 940c 00b6                 	JMP		C_HORA
+                                 C_FECHA_S:
+000092 940c 00e0                 	JMP		C_FECHA
+                                 C_ALARMA_S:
+000094 940c 00fa                 	JMP		C_ALARMA
+                                 APAGAR_ALARMA_S:
+000096 940c 00fe                 	JMP		APAGAR_ALARMA
                                  /*************** MODOS ***********************/
                                  HORA:
-00008b fd80                      	SBRC	ACCION, 0
-00008c 940e 0251                 	CALL	INC_UMIN
-00008e 9a28                      	SBI		PORTB, 0
-00008f 9829                      	CBI		PORTB, 1
-000090 9150 0101                 	LDS     CONTADOR_TIEMPO, UMIN  ; Tomar el valor de unidades y guardarlo en el registro 
-000092 9350 0105                 	STS		DISPLAY1, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
-000094 9150 0102                 	LDS     CONTADOR_TIEMPO, DMIN ; Tomar el valor de unidades y guardarlo en el registro 
-000096 9350 0106                 	STS		DISPLAY2, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display2
-000098 9150 0103                 	LDS     CONTADOR_TIEMPO, UHORAS ; Tomar el valor de unidades y guardarlo en el registro 
-00009a 9350 0107                 	STS		DISPLAY3, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display3
-00009c 9150 0104                 	LDS     CONTADOR_TIEMPO, DHORAS ; Tomar el valor de unidades y guardarlo en el registro 
-00009e 9350 0108                 	STS		DISPLAY4, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display4
+000098 fd80                      	SBRC	ACCION, 0
+000099 940e 027d                 	CALL	INC_UMIN
+00009b 9a28                      	SBI		PORTB, 0
+00009c 9829                      	CBI		PORTB, 1
+00009d 9843                      	CBI		PORTC, 3
+00009e 9150 0101                 	LDS     CONTADOR_TIEMPO, UMIN  ; Tomar el valor de unidades y guardarlo en el registro 
+0000a0 9350 0105                 	STS		DISPLAY1, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
+0000a2 9150 0102                 	LDS     CONTADOR_TIEMPO, DMIN ; Tomar el valor de unidades y guardarlo en el registro 
+0000a4 9350 0106                 	STS		DISPLAY2, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display2
+0000a6 9150 0103                 	LDS     CONTADOR_TIEMPO, UHORAS ; Tomar el valor de unidades y guardarlo en el registro 
+0000a8 9350 0107                 	STS		DISPLAY3, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display3
+0000aa 9150 0104                 	LDS     CONTADOR_TIEMPO, DHORAS ; Tomar el valor de unidades y guardarlo en el registro 
+0000ac 9350 0108                 	STS		DISPLAY4, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display4
                                  
-0000a0 cfdb                      	RJMP	MAIN
+0000ae cfcd                      	RJMP	MAIN
                                  
                                  FECHA:
-0000a1 9828                      	CBI		PORTB, 0
-0000a2 9829                      	CBI		PORTB, 1
-0000a3 9843                      	CBI		PORTC, 3
-0000a4 e009                      	LDI		R16, 0x09
-0000a5 9300 0105                 	STS		DISPLAY1, R16
-0000a7 cfd4                      	RJMP	MAIN
+0000af 9828                      	CBI		PORTB, 0
+0000b0 9829                      	CBI		PORTB, 1
+0000b1 9843                      	CBI		PORTC, 3
+0000b2 e009                      	LDI		R16, 0x09
+0000b3 9300 0105                 	STS		DISPLAY1, R16
+0000b5 cfc6                      	RJMP	MAIN
                                  
                                  C_HORA:
-0000a8 fd81                      	SBRC	ACCION, 1
-0000a9 940e 0117                 	CALL	SUMA 
-0000ab fd82                      	SBRC	ACCION, 2
-0000ac 940e 01a6                 	CALL	RESTA
-0000ae 9a28                      	SBI		PORTB, 0
-0000af 9829                      	CBI		PORTB, 1
-0000b0 9843                      	CBI		PORTC, 3
+0000b6 fd81                      	SBRC	ACCION, 1
+0000b7 940e 0135                 	CALL	SUMA 
+0000b9 fd82                      	SBRC	ACCION, 2
+0000ba 940e 01c4                 	CALL	RESTA
+0000bc 9a28                      	SBI		PORTB, 0
+0000bd 9829                      	CBI		PORTB, 1
+0000be 9843                      	CBI		PORTC, 3
                                  	//Suma y resta de los botones 
-0000b1 9170 010b                 	LDS     CONTADOR_BOTONES, UD_U_H  ; Tomar el valor de unidades y guardarlo en el registro 
-0000b3 9370 0105                 	STS		DISPLAY1, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
-0000b5 9170 010c                 	LDS     CONTADOR_BOTONES, UD_D_H  ; Tomar el valor de unidades y guardarlo en el registro 
-0000b7 9370 0106                 	STS		DISPLAY2, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 2
-0000b9 9170 010d                 	LDS     CONTADOR_BOTONES, UD_C_H  ; Tomar el valor de unidades y guardarlo en el registro 
-0000bb 9370 0107                 	STS		DISPLAY3, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 3
-0000bd 9170 010e                 	LDS     CONTADOR_BOTONES, UD_M_H  ; Tomar el valor de unidades y guardarlo en el registro 
-0000bf 9370 0108                 	STS		DISPLAY4, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
-0000c1 cfba                      	RJMP	MAIN
-                                 
-                                 C_FECHA:
-0000c2 9828                      	CBI		PORTB, 0
-0000c3 9a29                      	SBI		PORTB, 1
-0000c4 9843                      	CBI		PORTC, 3
-0000c5 fd81                      	SBRC	ACCION, 1
-0000c6 940e 0117                 	CALL	SUMA 
-0000c8 fd82                      	SBRC	ACCION, 2
-0000c9 940e 01a6                 	CALL	RESTA
-                                 	//Suma y resta de los botones 
-0000cb 9170 010f                 	LDS     CONTADOR_BOTONES, UD_U_F  ; Tomar el valor de unidades y guardarlo en el registro 
-0000cd 9370 0105                 	STS		DISPLAY1, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
-0000cf 9170 0110                 	LDS     CONTADOR_BOTONES, UD_D_F  ; Tomar el valor de unidades y guardarlo en el registro 
-0000d1 9370 0106                 	STS		DISPLAY2, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 2
-0000d3 9170 0111                 	LDS     CONTADOR_BOTONES, UD_C_F  ; Tomar el valor de unidades y guardarlo en el registro 
-0000d5 9370 0107                 	STS		DISPLAY3, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 3
-0000d7 9170 0112                 	LDS     CONTADOR_BOTONES, UD_M_F  ; Tomar el valor de unidades y guardarlo en el registro 
-0000d9 9370 0108                 	STS		DISPLAY4, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
-0000db cfa0                      	RJMP	MAIN
-                                 
-                                 C_ALARMA:
-0000dc 9828                      	CBI		PORTB, 0
-0000dd 9829                      	CBI		PORTB, 1
-0000de 9a44                      	SBI		PORTC, 4
+0000bf 9170 010b                 	LDS     CONTADOR_BOTONES, UD_U_H  ; Tomar el valor de unidades y guardarlo en el registro 
+0000c1 9370 0105                 	STS		DISPLAY1, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
+0000c3 9170 010c                 	LDS     CONTADOR_BOTONES, UD_D_H  ; Tomar el valor de unidades y guardarlo en el registro 
+0000c5 9370 0106                 	STS		DISPLAY2, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 2
+0000c7 9170 010d                 	LDS     CONTADOR_BOTONES, UD_C_H  ; Tomar el valor de unidades y guardarlo en el registro 
+0000c9 9370 0107                 	STS		DISPLAY3, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 3
+0000cb 9170 010e                 	LDS     CONTADOR_BOTONES, UD_M_H  ; Tomar el valor de unidades y guardarlo en el registro 
+0000cd 9370 0108                 	STS		DISPLAY4, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
+                                 	//Establecer el inicio en los valores de configuración de hora 
+0000cf 9150 010b                 	LDS     CONTADOR_TIEMPO, UD_U_H 
+0000d1 9350 0101                 	STS		UMIN, CONTADOR_TIEMPO
+0000d3 9150 010c                 	LDS     CONTADOR_TIEMPO, UD_D_H 
+0000d5 9350 0102                 	STS		DMIN, CONTADOR_TIEMPO
+0000d7 9150 010d                 	LDS     CONTADOR_TIEMPO, UD_C_H 
+0000d9 9350 0103                 	STS		UHORAS, CONTADOR_TIEMPO
+0000db 9150 010e                 	LDS     CONTADOR_TIEMPO, UD_M_H 
+0000dd 9350 0104                 	STS		DHORAS, CONTADOR_TIEMPO
 0000df cf9c                      	RJMP	MAIN
                                  
-                                 APAGAR_ALARMA:
+                                 C_FECHA:
 0000e0 9828                      	CBI		PORTB, 0
-0000e1 9829                      	CBI		PORTB, 1
+0000e1 9a29                      	SBI		PORTB, 1
 0000e2 9843                      	CBI		PORTC, 3
-0000e3 cf98                      	RJMP	MAIN
+0000e3 fd81                      	SBRC	ACCION, 1
+0000e4 940e 0135                 	CALL	SUMA 
+0000e6 fd82                      	SBRC	ACCION, 2
+0000e7 940e 01c4                 	CALL	RESTA
+                                 	//Suma y resta de los botones 
+0000e9 9170 010f                 	LDS     CONTADOR_BOTONES, UD_U_F  ; Tomar el valor de unidades y guardarlo en el registro 
+0000eb 9370 0105                 	STS		DISPLAY1, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
+0000ed 9170 0110                 	LDS     CONTADOR_BOTONES, UD_D_F  ; Tomar el valor de unidades y guardarlo en el registro 
+0000ef 9370 0106                 	STS		DISPLAY2, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 2
+0000f1 9170 0111                 	LDS     CONTADOR_BOTONES, UD_C_F  ; Tomar el valor de unidades y guardarlo en el registro 
+0000f3 9370 0107                 	STS		DISPLAY3, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 3
+0000f5 9170 0112                 	LDS     CONTADOR_BOTONES, UD_M_F  ; Tomar el valor de unidades y guardarlo en el registro 
+0000f7 9370 0108                 	STS		DISPLAY4, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
+0000f9 cf82                      	RJMP	MAIN
+                                 
+                                 C_ALARMA:
+0000fa 9828                      	CBI		PORTB, 0
+0000fb 9829                      	CBI		PORTB, 1
+0000fc 9a43                      	SBI		PORTC, 3
+0000fd cf7e                      	RJMP	MAIN
+                                 
+                                 APAGAR_ALARMA:
+0000fe 9828                      	CBI		PORTB, 0
+0000ff 9829                      	CBI		PORTB, 1
+000100 9843                      	CBI		PORTC, 3
+000101 cf7a                      	RJMP	MAIN
                                  /************** INTERRUPCIONES PIN CHANGE  ********/
                                  ISR_PCINT1: 
-0000e4 930f                          PUSH	R16
-0000e5 b70f                          IN		R16, SREG
-0000e6 930f                          PUSH	R16
+000102 930f                          PUSH	R16
+000103 b70f                          IN		R16, SREG
+000104 930f                          PUSH	R16
                                  	//Para el botón de modos 
-0000e7 9b32                          SBIS	PINC, PC2					//Leer si el botón de cambio de modo está en set, si lo está saltar la siguiente linea
-0000e8 940c 00f5                 	JMP		BOTONMODO
-0000ea 9b30                      	SBIS	PINC, PC0
-0000eb 940c 00fd                 	JMP		BOTON_SUMA
-0000ed 9b31                      	SBIS	PINC, PC1
-0000ee 940c 0101                 	JMP		BOTON_RESTA
-0000f0 9b34                      	SBIS	PINC, PC4
-0000f1 940c 0105                 	JMP		UNIDADES_DECENAS
-0000f3 940c 0113                     JMP		F_ISR
+000105 9b32                          SBIS	PINC, PC2					//Leer si el botón de cambio de modo está en set, si lo está saltar la siguiente linea
+000106 940c 0113                 	JMP		BOTONMODO
+000108 9b30                      	SBIS	PINC, PC0
+000109 940c 011b                 	JMP		BOTON_SUMA
+00010b 9b31                      	SBIS	PINC, PC1
+00010c 940c 011f                 	JMP		BOTON_RESTA
+00010e 9b34                      	SBIS	PINC, PC4
+00010f 940c 0123                 	JMP		UNIDADES_DECENAS
+000111 940c 0131                     JMP		F_ISR
                                  BOTONMODO:
-0000f5 9523                      	INC		MODO
-0000f6 e006                      	LDI		R16, MODOS
-0000f7 1320                      	CPSE	MODO, R16 //Saltar si son iguales 
-0000f8 940c 0113                 	JMP		F_ISR
-0000fa 2722                      	CLR		MODO ; Si el modo se pasó del limite limpiarlo y comenzar el 0 
-0000fb 940c 0113                 	JMP		F_ISR
+000113 9523                      	INC		MODO
+000114 e006                      	LDI		R16, MODOS
+000115 1320                      	CPSE	MODO, R16 //Saltar si son iguales 
+000116 940c 0131                 	JMP		F_ISR
+000118 2722                      	CLR		MODO ; Si el modo se pasó del limite limpiarlo y comenzar el 0 
+000119 940c 0131                 	JMP		F_ISR
                                  BOTON_SUMA:
-0000fd e002                      	LDI		R16, 0b00000010
-0000fe 2780                      	EOR		ACCION, R16
-0000ff 940c 0113                 	JMP		F_ISR
+00011b e002                      	LDI		R16, 0b00000010
+00011c 2780                      	EOR		ACCION, R16
+00011d 940c 0131                 	JMP		F_ISR
                                  BOTON_RESTA:
-000101 e004                      	LDI		R16, 0b00000100
-000102 2780                      	EOR		ACCION, R16
-000103 940c 0113                 	JMP		F_ISR
+00011f e004                      	LDI		R16, 0b00000100
+000120 2780                      	EOR		ACCION, R16
+000121 940c 0131                 	JMP		F_ISR
                                  
                                  UNIDADES_DECENAS: 
-000105 9170 010a                 	LDS     CONTADOR_BOTONES, U_D
-000107 9573                      	INC		CONTADOR_BOTONES
-000108 9370 010a                 	STS     U_D, CONTADOR_BOTONES
-00010a e002                      	LDI		R16, 0x02
-00010b 1370                      	CPSE	CONTADOR_BOTONES, R16 //Saltar si son iguales
-00010c 940c 0113                 	JMP		F_ISR
-00010e 2777                      	CLR		CONTADOR_BOTONES
-00010f 9370 010a                 	STS     U_D, CONTADOR_BOTONES
-000111 940c 0113                 	JMP		F_ISR
+000123 9170 010a                 	LDS     CONTADOR_BOTONES, U_D
+000125 9573                      	INC		CONTADOR_BOTONES
+000126 9370 010a                 	STS     U_D, CONTADOR_BOTONES
+000128 e002                      	LDI		R16, 0x02
+000129 1370                      	CPSE	CONTADOR_BOTONES, R16 //Saltar si son iguales
+00012a 940c 0131                 	JMP		F_ISR
+00012c 2777                      	CLR		CONTADOR_BOTONES
+00012d 9370 010a                 	STS     U_D, CONTADOR_BOTONES
+00012f 940c 0131                 	JMP		F_ISR
                                  //FIN DE LA INTERRUPCIÓN 
                                  F_ISR:
-000113 910f                          POP R16
-000114 bf0f                          OUT SREG, R16
-000115 910f                          POP R16
-000116 9518                          RETI
+000131 910f                          POP R16
+000132 bf0f                          OUT SREG, R16
+000133 910f                          POP R16
+000134 9518                          RETI
                                  //SUBRUTINAS PARA EL BOTÓN DE SUMA 
                                  SUMA:    
-000117 e002                          LDI     R16, 0b00000010   ; Cargar el valor en R16
-000118 2780                          EOR     ACCION, R16       ; Alternar el bit correspondiente en ACCION
+000135 e002                          LDI     R16, 0b00000010   ; Cargar el valor en R16
+000136 2780                          EOR     ACCION, R16       ; Alternar el bit correspondiente en ACCION
                                      
                                      ; Comprobar si MODO == 0x02
-000119 3022                          CPI     MODO, 0x02
-00011a f411                          BRNE    VERIFICAR_FECHA1   ; Si no es igual, verificar la siguiente condición
-00011b 940c 0123                     JMP     SUMA_HORA         ; Si es igual, saltar a SUMA_HORA
+000137 3022                          CPI     MODO, 0x02
+000138 f411                          BRNE    VERIFICAR_FECHA1   ; Si no es igual, verificar la siguiente condición
+000139 940c 0141                     JMP     SUMA_HORA         ; Si es igual, saltar a SUMA_HORA
                                  
                                  VERIFICAR_FECHA1:
                                      ; Comprobar si MODO == 0x03
-00011d 3023                          CPI     MODO, 0x03
-00011e f411                          BRNE    LLAMAR_RETORNO    ; Si no es igual, saltar a retorno largo
-00011f 940c 0172                     JMP     SUMA_FECHA        ; Si es igual, saltar a SUMA_FECHA
+00013b 3023                          CPI     MODO, 0x03
+00013c f411                          BRNE    LLAMAR_RETORNO    ; Si no es igual, saltar a retorno largo
+00013d 940c 0190                     JMP     SUMA_FECHA        ; Si es igual, saltar a SUMA_FECHA
                                  
                                  LLAMAR_RETORNO:
-000121 940c 01a5                     JMP     RETORNO_BOTON     ; Usar JMP para saltar a cualquier parte del código
+00013f 940c 01c3                     JMP     RETORNO_BOTON     ; Usar JMP para saltar a cualquier parte del código
                                  SUMA_HORA:
-000123 9170 010a                 	LDS     CONTADOR_BOTONES, U_D
-000125 3070                      	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
-000126 f021                      	BREQ	SUMA_HORA_UNIDADES 
-000127 3071                      	CPI		CONTADOR_BOTONES, 0x01
-000128 f0e1                      	BREQ	SUMA_HORA_DECENAS
-000129 940c 01a5                 	JMP		RETORNO_BOTON
+000141 9170 010a                 	LDS     CONTADOR_BOTONES, U_D
+000143 3070                      	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
+000144 f021                      	BREQ	SUMA_HORA_UNIDADES 
+000145 3071                      	CPI		CONTADOR_BOTONES, 0x01
+000146 f0e1                      	BREQ	SUMA_HORA_DECENAS
+000147 940c 01c3                 	JMP		RETORNO_BOTON
                                  SUMA_HORA_UNIDADES:
                                  	//Para solo modificar en un solo modo 
-00012b 9170 010b                 	LDS     CONTADOR_BOTONES, UD_U_H
+000149 9170 010b                 	LDS     CONTADOR_BOTONES, UD_U_H
                                  	//Ahora se le suma el contador a las unidades de los min
-00012d 3079                      	CPI		CONTADOR_BOTONES,MAX_UNI
-00012e f029                      	BREQ	OFUC
-00012f 9573                      	INC		CONTADOR_BOTONES		; incrementa la variable
-000130 9370 010b                     STS     UD_U_H, CONTADOR_BOTONES
-000132 940c 01a5                 	JMP		RETORNO_BOTON
+00014b 3079                      	CPI		CONTADOR_BOTONES,MAX_UNI
+00014c f029                      	BREQ	OFUC
+00014d 9573                      	INC		CONTADOR_BOTONES		; incrementa la variable
+00014e 9370 010b                     STS     UD_U_H, CONTADOR_BOTONES
+000150 940c 01c3                 	JMP		RETORNO_BOTON
                                  OFUC:
-000134 e070                      	LDI		CONTADOR_BOTONES, 0x00
-000135 9370 010b                 	STS     UD_U_H, CONTADOR_BOTONES ; Limpiar las unidades
-000137 9170 010c                 	LDS     CONTADOR_BOTONES, UD_D_H
-000139 9573                      	INC		CONTADOR_BOTONES
-00013a 9370 010c                 	STS     UD_D_H, CONTADOR_BOTONES
-00013c e006                      	LDI		R16, 0x06
-00013d 1370                      	CPSE	CONTADOR_BOTONES, R16 ; Saltar la siguiente linea si son iguales 
-00013e 940c 01a5                 	JMP		RETORNO_BOTON
-000140 2777                      	CLR		CONTADOR_BOTONES
-000141 9370 010c                 	STS     UD_D_H, CONTADOR_BOTONES
-000143 940c 01a5                 	JMP		RETORNO_BOTON
+000152 e070                      	LDI		CONTADOR_BOTONES, 0x00
+000153 9370 010b                 	STS     UD_U_H, CONTADOR_BOTONES ; Limpiar las unidades
+000155 9170 010c                 	LDS     CONTADOR_BOTONES, UD_D_H
+000157 9573                      	INC		CONTADOR_BOTONES
+000158 9370 010c                 	STS     UD_D_H, CONTADOR_BOTONES
+00015a e006                      	LDI		R16, 0x06
+00015b 1370                      	CPSE	CONTADOR_BOTONES, R16 ; Saltar la siguiente linea si son iguales 
+00015c 940c 01c3                 	JMP		RETORNO_BOTON
+00015e 2777                      	CLR		CONTADOR_BOTONES
+00015f 9370 010c                 	STS     UD_D_H, CONTADOR_BOTONES
+000161 940c 01c3                 	JMP		RETORNO_BOTON
                                  	
                                  SUMA_HORA_DECENAS:
-000145 9170 010e                 	LDS     CONTADOR_BOTONES, UD_M_H     ; Cargar decenas de horas
-000147 3072                          CPI     CONTADOR_BOTONES, 0x02        ; Verificar si DHORAS == 2
-000148 f479                          BRNE	OFT_C		  ; Si es 2, verificar si UHORAS == 4 (24 horas)
-000149 9170 010d                 	LDS     CONTADOR_BOTONES, UD_C_H
-00014b 3074                          CPI		CONTADOR_BOTONES,  0x04
-00014c f4f1                      	BRNE    MAX_FIN_DIA_C ; MIENTRAS NO SEA 4 IR A LA FUNCION 
-00014d 2777                      	CLR		CONTADOR_BOTONES
-00014e 9370 010b                 	STS     UD_U_H, CONTADOR_BOTONES
-000150 9370 010c                 	STS     UD_D_H, CONTADOR_BOTONES
-000152 9370 010d                 	STS     UD_C_H, CONTADOR_BOTONES
-000154 9370 010e                 	STS     UD_M_H, CONTADOR_BOTONES
-000156 940c 01a5                 	JMP		RETORNO_BOTON
+000163 9170 010e                 	LDS     CONTADOR_BOTONES, UD_M_H     ; Cargar decenas de horas
+000165 3072                          CPI     CONTADOR_BOTONES, 0x02        ; Verificar si DHORAS == 2
+000166 f479                          BRNE	OFT_C		  ; Si es 2, verificar si UHORAS == 4 (24 horas)
+000167 9170 010d                 	LDS     CONTADOR_BOTONES, UD_C_H
+000169 3074                          CPI		CONTADOR_BOTONES,  0x04
+00016a f4f1                      	BRNE    MAX_FIN_DIA_C ; MIENTRAS NO SEA 4 IR A LA FUNCION 
+00016b 2777                      	CLR		CONTADOR_BOTONES
+00016c 9370 010b                 	STS     UD_U_H, CONTADOR_BOTONES
+00016e 9370 010c                 	STS     UD_D_H, CONTADOR_BOTONES
+000170 9370 010d                 	STS     UD_C_H, CONTADOR_BOTONES
+000172 9370 010e                 	STS     UD_M_H, CONTADOR_BOTONES
+000174 940c 01c3                 	JMP		RETORNO_BOTON
                                  
                                  OFT_C: 
                                      // Incrementar decenas 
-000158 9170 010d                 	LDS     CONTADOR_BOTONES, UD_C_H
+000176 9170 010d                 	LDS     CONTADOR_BOTONES, UD_C_H
                                  	//Ahora se le suma el contador a las unidades de los min
-00015a 3079                      	CPI		CONTADOR_BOTONES, MAX_UNI
-00015b f029                      	BREQ	MAX_D_TIEMPO_C
-00015c 9573                      	INC		CONTADOR_BOTONES 		; incrementa la variable
-00015d 9370 010d                     STS     UD_C_H, CONTADOR_BOTONES
-00015f 940c 01a5                 	JMP     RETORNO_BOTON 
+000178 3079                      	CPI		CONTADOR_BOTONES, MAX_UNI
+000179 f029                      	BREQ	MAX_D_TIEMPO_C
+00017a 9573                      	INC		CONTADOR_BOTONES 		; incrementa la variable
+00017b 9370 010d                     STS     UD_C_H, CONTADOR_BOTONES
+00017d 940c 01c3                 	JMP     RETORNO_BOTON 
                                  MAX_D_TIEMPO_C: 
-000161 e070                      	LDI     CONTADOR_BOTONES, 0x00
-000162 9370 010d                     STS     UD_C_H, CONTADOR_BOTONES ;LIMPIAR UNIDADES 
-000164 9170 010e                     LDS     CONTADOR_BOTONES,  UD_M_H
-000166 9573                      	INC		CONTADOR_BOTONES 
-000167 9370 010e                 	STS     UD_M_H, CONTADOR_BOTONES
-000169 940c 01a5                 	JMP		RETORNO_BOTON
+00017f e070                      	LDI     CONTADOR_BOTONES, 0x00
+000180 9370 010d                     STS     UD_C_H, CONTADOR_BOTONES ;LIMPIAR UNIDADES 
+000182 9170 010e                     LDS     CONTADOR_BOTONES,  UD_M_H
+000184 9573                      	INC		CONTADOR_BOTONES 
+000185 9370 010e                 	STS     UD_M_H, CONTADOR_BOTONES
+000187 940c 01c3                 	JMP		RETORNO_BOTON
                                  MAX_FIN_DIA_C:
-00016b 9170 010d                 	LDS     CONTADOR_BOTONES, UD_C_H
-00016d 9573                      	INC		CONTADOR_BOTONES
-00016e 9370 010d                 	STS     UD_C_H, CONTADOR_BOTONES
-000170 940c 01a5                 	JMP		RETORNO_BOTON
+000189 9170 010d                 	LDS     CONTADOR_BOTONES, UD_C_H
+00018b 9573                      	INC		CONTADOR_BOTONES
+00018c 9370 010d                 	STS     UD_C_H, CONTADOR_BOTONES
+00018e 940c 01c3                 	JMP		RETORNO_BOTON
                                  
                                  
                                  
                                  
                                  SUMA_FECHA:
-000172 9170 010a                 	LDS     CONTADOR_BOTONES, U_D
-000174 3070                      	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
-000175 f021                      	BREQ	SUMA_FECHA_UNIDADES 
-000176 3071                      	CPI		CONTADOR_BOTONES, 0x01
-000177 f159                      	BREQ	SUMA_FECHA_DECENAS
-000178 940c 01a5                 	JMP		RETORNO_BOTON
+000190 9170 010a                 	LDS     CONTADOR_BOTONES, U_D
+000192 3070                      	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
+000193 f021                      	BREQ	SUMA_FECHA_UNIDADES 
+000194 3071                      	CPI		CONTADOR_BOTONES, 0x01
+000195 f159                      	BREQ	SUMA_FECHA_DECENAS
+000196 940c 01c3                 	JMP		RETORNO_BOTON
                                  SUMA_FECHA_UNIDADES:
                                  	//Para solo modificar en un solo modo 
-00017a 9170 0110                 	LDS     CONTADOR_BOTONES, UD_D_F
-00017c 3071                          CPI		CONTADOR_BOTONES, 0x01
-00017d f459                          BRNE    OFU_MESES
-00017e 9170 010f                 	LDS     CONTADOR_BOTONES, UD_U_F
-000180 3072                          CPI		CONTADOR_BOTONES, 0x02
-000181 f481                      	BRNE    MAX_FIN
-000182 2777                      	CLR		CONTADOR_BOTONES
-000183 9370 010f                 	STS     UD_U_F, CONTADOR_BOTONES
-000185 9370 0110                 	STS     UD_D_F, CONTADOR_BOTONES
-000187 940c 01a5                 	JMP		RETORNO_BOTON
+000198 9170 0110                 	LDS     CONTADOR_BOTONES, UD_D_F
+00019a 3071                          CPI		CONTADOR_BOTONES, 0x01
+00019b f459                          BRNE    OFU_MESES
+00019c 9170 010f                 	LDS     CONTADOR_BOTONES, UD_U_F
+00019e 3072                          CPI		CONTADOR_BOTONES, 0x02
+00019f f481                      	BRNE    MAX_FIN
+0001a0 2777                      	CLR		CONTADOR_BOTONES
+0001a1 9370 010f                 	STS     UD_U_F, CONTADOR_BOTONES
+0001a3 9370 0110                 	STS     UD_D_F, CONTADOR_BOTONES
+0001a5 940c 01c3                 	JMP		RETORNO_BOTON
                                  	
                                  OFU_MESES: 
                                      // Incrementar decenas Y VERIFICA SI NO ES 1 
-000189 9170 010f                 	LDS     CONTADOR_BOTONES, UD_U_F
+0001a7 9170 010f                 	LDS     CONTADOR_BOTONES, UD_U_F
                                  	//Ahora se le suma el contador a las unidades de los min
-00018b 3079                      	CPI		CONTADOR_BOTONES,MAX_UNI
-00018c f061                      	BREQ	MAX_D
-00018d 9573                      	INC		CONTADOR_BOTONES		; incrementa la variable
-00018e 9370 010f                     STS     UD_U_F, CONTADOR_BOTONES
-000190 940c 01a5                 	JMP		RETORNO_BOTON
+0001a9 3079                      	CPI		CONTADOR_BOTONES,MAX_UNI
+0001aa f061                      	BREQ	MAX_D
+0001ab 9573                      	INC		CONTADOR_BOTONES		; incrementa la variable
+0001ac 9370 010f                     STS     UD_U_F, CONTADOR_BOTONES
+0001ae 940c 01c3                 	JMP		RETORNO_BOTON
                                  
                                  	
                                  MAX_FIN: 
-000192 9170 010f                 	LDS     CONTADOR_BOTONES, UD_U_F
-000194 9573                      	INC		CONTADOR_BOTONES
-000195 9370 010f                 	STS     UD_U_F, CONTADOR_BOTONES
-000197 940c 01a5                 	JMP		RETORNO_BOTON
+0001b0 9170 010f                 	LDS     CONTADOR_BOTONES, UD_U_F
+0001b2 9573                      	INC		CONTADOR_BOTONES
+0001b3 9370 010f                 	STS     UD_U_F, CONTADOR_BOTONES
+0001b5 940c 01c3                 	JMP		RETORNO_BOTON
                                  MAX_D:
-000199 e070                      	LDI     CONTADOR_BOTONES, 0x00
-00019a 9370 010f                     STS     UD_U_F, CONTADOR_BOTONES ;LIMPIAR UNIDADES 
-00019c 9170 0110                     LDS     CONTADOR_BOTONES, UD_D_F
-00019e 9573                      	INC		CONTADOR_BOTONES
-00019f 9370 0110                 	STS     UD_D_F, CONTADOR_BOTONES
-0001a1 940c 01a5                 	JMP		RETORNO_BOTON
+0001b7 e070                      	LDI     CONTADOR_BOTONES, 0x00
+0001b8 9370 010f                     STS     UD_U_F, CONTADOR_BOTONES ;LIMPIAR UNIDADES 
+0001ba 9170 0110                     LDS     CONTADOR_BOTONES, UD_D_F
+0001bc 9573                      	INC		CONTADOR_BOTONES
+0001bd 9370 0110                 	STS     UD_D_F, CONTADOR_BOTONES
+0001bf 940c 01c3                 	JMP		RETORNO_BOTON
                                  
                                  SUMA_FECHA_DECENAS: 
-0001a3 940c 01a5                 	JMP		RETORNO_BOTON 
+0001c1 940c 01c3                 	JMP		RETORNO_BOTON 
                                  	
                                  //Retorno, se colocó aquí para lograr hacer los saltos con JMP y BRNE 
                                  RETORNO_BOTON:
-0001a5 9508                      	RET
+0001c3 9508                      	RET
                                  //SUBRUTINAS PARA EL BOTÓN DE RESTA 
                                  
                                  RESTA:    
-0001a6 e004                          LDI     R16, 0b00000100      ; Cargar el valor en R16
-0001a7 2780                          EOR     ACCION, R16          ; Alternar el bit correspondiente en ACCION
-0001a8 940c 01aa                     JMP     VERIFICAR_MODO       ; Saltar a la lógica de comparación
+0001c4 e004                          LDI     R16, 0b00000100      ; Cargar el valor en R16
+0001c5 2780                          EOR     ACCION, R16          ; Alternar el bit correspondiente en ACCION
+0001c6 940c 01c8                     JMP     VERIFICAR_MODO       ; Saltar a la lógica de comparación
                                  
                                  VERIFICAR_MODO:
                                      ; Comprobar si MODO == 0x02
-0001aa 3022                          CPI     MODO, 0x02           
-0001ab f411                          BRNE    VERIFICAR_FECHA      ; Si no es igual, verificar la siguiente condición
-0001ac 940c 01b2                     JMP     RESTA_HORA           ; Si es igual, saltar a RESTA_HORA
+0001c8 3022                          CPI     MODO, 0x02           
+0001c9 f411                          BRNE    VERIFICAR_FECHA      ; Si no es igual, verificar la siguiente condición
+0001ca 940c 01d0                     JMP     RESTA_HORA           ; Si es igual, saltar a RESTA_HORA
                                  
                                  VERIFICAR_FECHA:
                                      ; Comprobar si MODO == 0x03
-0001ae 3023                          CPI     MODO, 0x03
-0001af f7a9                          BRNE    RETORNO_BOTON        ; Si no es igual, regresar
-0001b0 940c 01f2                     JMP     RESTA_FECHA          ; Si es igual, saltar a RESTA_FECHA
+0001cc 3023                          CPI     MODO, 0x03
+0001cd f7a9                          BRNE    RETORNO_BOTON        ; Si no es igual, regresar
+0001ce 940c 021e                     JMP     RESTA_FECHA          ; Si es igual, saltar a RESTA_FECHA
                                  
                                  RESTA_HORA:
-0001b2 9170 010a                 	LDS     CONTADOR_BOTONES, U_D
-0001b4 3070                      	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
-0001b5 f021                      	BREQ	RESTA_HORA_UNIDADES 
-0001b6 3071                      	CPI		CONTADOR_BOTONES, 0x01
-0001b7 f0f1                      	BREQ	RESTA_HORA_DECENAS
-0001b8 940c 01a5                 	JMP		RETORNO_BOTON
+0001d0 9170 010a                 	LDS     CONTADOR_BOTONES, U_D
+0001d2 3070                      	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
+0001d3 f021                      	BREQ	RESTA_HORA_UNIDADES 
+0001d4 3071                      	CPI		CONTADOR_BOTONES, 0x01
+0001d5 f0f1                      	BREQ	RESTA_HORA_DECENAS
+0001d6 940c 01c3                 	JMP		RETORNO_BOTON
                                  RESTA_HORA_UNIDADES:
                                  	//Para solo modificar en un solo modo 
-0001ba 9170 010b                 	LDS     CONTADOR_BOTONES, UD_U_H
+0001d8 9170 010b                 	LDS     CONTADOR_BOTONES, UD_U_H
                                  	//Ahora se le RESTA el contador a las unidades de los min
-0001bc 3070                      	CPI		CONTADOR_BOTONES,0x00
-0001bd f029                      	BREQ	OUFU
-0001be 957a                      	DEC		CONTADOR_BOTONES		; incrementa la variable
-0001bf 9370 010b                     STS     UD_U_H, CONTADOR_BOTONES
-0001c1 940c 01a5                 	JMP		RETORNO_BOTON
+0001da 3070                      	CPI		CONTADOR_BOTONES,0x00
+0001db f029                      	BREQ	OUFU
+0001dc 957a                      	DEC		CONTADOR_BOTONES		; incrementa la variable
+0001dd 9370 010b                     STS     UD_U_H, CONTADOR_BOTONES
+0001df 940c 01c3                 	JMP		RETORNO_BOTON
                                  OUFU:
-0001c3 e079                      	LDI		CONTADOR_BOTONES, 0x09
-0001c4 9370 010b                 	STS     UD_U_H, CONTADOR_BOTONES ; Limpiar las unidades
-0001c6 9170 010c                 	LDS     CONTADOR_BOTONES, UD_D_H
-0001c8 3070                      	CPI		CONTADOR_BOTONES, 0x00
-0001c9 f029                      	BREQ	OUFU2
-0001ca 957a                      	DEC		CONTADOR_BOTONES
-0001cb 9370 010c                 	STS     UD_D_H, CONTADOR_BOTONES
-0001cd 940c 01a5                 	JMP		RETORNO_BOTON
+0001e1 e079                      	LDI		CONTADOR_BOTONES, 0x09
+0001e2 9370 010b                 	STS     UD_U_H, CONTADOR_BOTONES ; Limpiar las unidades
+0001e4 9170 010c                 	LDS     CONTADOR_BOTONES, UD_D_H
+0001e6 3070                      	CPI		CONTADOR_BOTONES, 0x00
+0001e7 f029                      	BREQ	OUFU2
+0001e8 957a                      	DEC		CONTADOR_BOTONES
+0001e9 9370 010c                 	STS     UD_D_H, CONTADOR_BOTONES
+0001eb 940c 01c3                 	JMP		RETORNO_BOTON
                                  OUFU2:
-0001cf 9170 010c                 	LDS     CONTADOR_BOTONES, UD_D_H
-0001d1 e075                      	LDI		CONTADOR_BOTONES, 0x05
-0001d2 9370 010c                 	STS     UD_D_H, CONTADOR_BOTONES
-0001d4 940c 01a5                 	JMP		RETORNO_BOTON
+0001ed 9170 010c                 	LDS     CONTADOR_BOTONES, UD_D_H
+0001ef e075                      	LDI		CONTADOR_BOTONES, 0x05
+0001f0 9370 010c                 	STS     UD_D_H, CONTADOR_BOTONES
+0001f2 940c 01c3                 	JMP		RETORNO_BOTON
+                                 
                                  RESTA_HORA_DECENAS:
-                                 	//Para solo modificar en un solo modo 
-0001d6 9170 010d                 	LDS     CONTADOR_BOTONES, UD_C_H
-                                 	//Ahora se le RESTA el contador a las unidades de los min
-0001d8 3070                      	CPI		CONTADOR_BOTONES,0x00
-0001d9 f029                      	BREQ	OUFD
-0001da 957a                      	DEC		CONTADOR_BOTONES		; incrementa la variable
-0001db 9370 010d                     STS     UD_C_H, CONTADOR_BOTONES
-0001dd 940c 01a5                 	JMP		RETORNO_BOTON
-                                 OUFD:
-0001df e074                      	LDI		CONTADOR_BOTONES, 0x04
-0001e0 9370 010d                 	STS     UD_C_H, CONTADOR_BOTONES ; Limpiar las unidades
-0001e2 9170 010e                 	LDS     CONTADOR_BOTONES, UD_M_H
-0001e4 3070                      	CPI		CONTADOR_BOTONES, 0x00
-0001e5 f029                      	BREQ	OUFD2
-0001e6 957a                      	DEC		CONTADOR_BOTONES
-0001e7 9370 010e                 	STS     UD_M_H, CONTADOR_BOTONES
-0001e9 940c 01a5                 	JMP		RETORNO_BOTON
-                                 OUFD2:
-0001eb 9170 010e                 	LDS     CONTADOR_BOTONES, UD_M_H
-0001ed e072                      	LDI		CONTADOR_BOTONES, 0x02
-0001ee 9370 010e                 	STS     UD_M_H, CONTADOR_BOTONES
-0001f0 940c 01a5                 	JMP		RETORNO_BOTON
+0001f4 9170 010e                 	LDS     CONTADOR_BOTONES, UD_M_H
+0001f6 3070                      	CPI     CONTADOR_BOTONES, 0x00
+0001f7 f461                      	BRNE    UFU_MESES   // Salta si no es el primer caso
+0001f8 9170 010d                 	LDS     CONTADOR_BOTONES, UD_C_H  
+0001fa 3070                          CPI		CONTADOR_BOTONES, 0x00    
+0001fb f4d9                      	BRNE    DECREMENTAR_UNI         // si es 0 saltar 
+                                 	// si los dos son 0 establecer el contador en 24
+0001fc e074                      	LDI		CONTADOR_BOTONES, 0x04
+0001fd 9370 010d                 	STS		UD_C_H, CONTADOR_BOTONES   
+0001ff e072                      	LDI		CONTADOR_BOTONES, 0x02
+000200 9370 010e                 	STS		UD_M_H, CONTADOR_BOTONES  
+000202 940c 01c3                 	JMP		RETORNO_BOTON
+                                 UFU_MESES: 
+000204 9170 010d                 	LDS     CONTADOR_BOTONES, UD_C_H // Si las decenas no son 0 d
+000206 3070                      	CPI		CONTADOR_BOTONES, 0x00 // comparar con 0
+000207 f029                      	BREQ	DECREMENTAR_DEC // si es 0 saltar 
+000208 957a                      	DEC		CONTADOR_BOTONES // si no es o decrementar las unidades normalmente. 
+000209 9370 010d                 	STS     UD_C_H, CONTADOR_BOTONES
+00020b 940c 01c3                 	JMP		RETORNO_BOTON
+                                 
+                                 DECREMENTAR_DEC:
+                                     // Si las unidades son 0, decrementa las decenas
+00020d 9170 010e                 	LDS     CONTADOR_BOTONES, UD_M_H
+00020f 957a                      	DEC		CONTADOR_BOTONES
+000210 9370 010e                 	STS     UD_M_H, CONTADOR_BOTONES
+                                 	// establecer las unidades en 9 
+000212 e079                      	LDI     CONTADOR_BOTONES, 0x09
+000213 9370 010d                 	STS     UD_C_H, CONTADOR_BOTONES
+000215 940c 01c3                 	JMP		RETORNO_BOTON
+                                 DECREMENTAR_UNI:
+                                     // Si las unidades no son 0, solo decrementarlas
+000217 9170 010d                 	LDS     CONTADOR_BOTONES, UD_C_H
+000219 957a                      	DEC		CONTADOR_BOTONES
+00021a 9370 010d                 	STS     UD_C_H, CONTADOR_BOTONES
+00021c 940c 01c3                 	JMP		RETORNO_BOTON
+                                 
                                  
                                  RESTA_FECHA:
-0001f2 940c 01a5                 	JMP		RETORNO_BOTON	
+00021e 940c 01c3                 	JMP		RETORNO_BOTON	
                                  
                                  /************************************* INTERRUPCIONES DEL T0******************************************/ 
                                  TMR0_ISR:
-0001f4 930f                      	PUSH	R16
-0001f5 b70f                      	IN		R16, SREG
-0001f6 930f                      	PUSH	R16
+000220 930f                      	PUSH	R16
+000221 b70f                      	IN		R16, SREG
+000222 930f                      	PUSH	R16
                                  	//Establecer los leds en apagado inicialmente 
-0001f7 982a                      	CBI		PORTB, 2
-0001f8 982b                      	CBI		PORTB, 3
-0001f9 982c                      	CBI		PORTB, 4
-0001fa 982d                      	CBI		PORTB, 5
-0001fb 9513                      	INC		CONTADORT0
+000223 982a                      	CBI		PORTB, 2
+000224 982b                      	CBI		PORTB, 3
+000225 982c                      	CBI		PORTB, 4
+000226 982d                      	CBI		PORTB, 5
+000227 9513                      	INC		CONTADORT0
                                  	//VERIFICAR QUE NO HAYA EXEDIDO EL LÍMITE 
-0001fc e005                      	LDI		R16, MAXT0
-0001fd 1310                      	CPSE	CONTADORT0, R16 //Saltar si son iguales 
-0001fe 940c 0203                 	JMP		MUX
-000200 e010                      	LDI		CONTADORT0, 0x00
-000201 940c 0235                 	JMP		FIN_T0
+000228 e005                      	LDI		R16, MAXT0
+000229 1310                      	CPSE	CONTADORT0, R16 //Saltar si son iguales 
+00022a 940c 022f                 	JMP		MUX
+00022c e010                      	LDI		CONTADORT0, 0x00
+00022d 940c 0261                 	JMP		FIN_T0
                                  MUX: 
-000203 3011                      	CPI		CONTADORT0, 0x01           ; PB2
-000204 f041                          BREQ	DISPLAY_1
-000205 3012                          CPI		CONTADORT0, 0x02           ; PB3
-000206 f081                          BREQ	DISPLAY_2
-000207 3013                          CPI		CONTADORT0, 0x03          ; PB4
-000208 f0c1                          BREQ	DISPLAY_3
-000209 3014                          CPI		CONTADORT0, 0x04           ; PB5
-00020a f101                          BREQ	DISPLAY_4
-00020b 940c 0235                 	JMP		FIN_T0
+00022f 3011                      	CPI		CONTADORT0, 0x01           ; PB2
+000230 f041                          BREQ	DISPLAY_1
+000231 3012                          CPI		CONTADORT0, 0x02           ; PB3
+000232 f081                          BREQ	DISPLAY_2
+000233 3013                          CPI		CONTADORT0, 0x03          ; PB4
+000234 f0c1                          BREQ	DISPLAY_3
+000235 3014                          CPI		CONTADORT0, 0x04           ; PB5
+000236 f101                          BREQ	DISPLAY_4
+000237 940c 0261                 	JMP		FIN_T0
                                  DISPLAY_1:
                                  	//ENCENDER SOLO EL TRANSISTOR NECESARIO 
-00020d 9a2a                      	SBI		PORTB, 2
-00020e 9160 0105                 	LDS		DISPLAYS, DISPLAY1 ; El registro de display tiene la salida de display 1 según el modo
+000239 9a2a                      	SBI		PORTB, 2
+00023a 9160 0105                 	LDS		DISPLAYS, DISPLAY1 ; El registro de display tiene la salida de display 1 según el modo
                                  	//SOLO PARA PROBAR QUE EL MUX FUNCIONE    
-000210 e0f5                      	LDI		ZH, HIGH(TABLA<<1)  // Carga la parte alta de la dirección de tabla en ZH
-000211 e5ea                          LDI		ZL, LOW(TABLA<<1)   // Carga la parte baja de la dirección de la tabla en ZL
-000212 0fe6                          ADD		ZL, DISPLAYS
-000213 9144                          LPM		S_DISPLAY, Z
-000214 b94b                          OUT		PORTD, S_DISPLAY
-000215 940c 0235                 	JMP		FIN_T0
+00023c e0f5                      	LDI		ZH, HIGH(TABLA<<1)  // Carga la parte alta de la dirección de tabla en ZH
+00023d ebe2                          LDI		ZL, LOW(TABLA<<1)   // Carga la parte baja de la dirección de la tabla en ZL
+00023e 0fe6                          ADD		ZL, DISPLAYS
+00023f 9144                          LPM		S_DISPLAY, Z
+000240 b94b                          OUT		PORTD, S_DISPLAY
+000241 940c 0261                 	JMP		FIN_T0
                                  DISPLAY_2:
                                  	//ENCENDER SOLO EL TRANSISTOR NECESARIO 
-000217 9a2b                      	SBI		PORTB, 3
-000218 9160 0106                 	LDS		DISPLAYS, DISPLAY2
+000243 9a2b                      	SBI		PORTB, 3
+000244 9160 0106                 	LDS		DISPLAYS, DISPLAY2
                                  	//SOLO PARA PROBAR QUE EL MUX FUNCIONE 
-00021a e0f5                      	LDI		ZH, HIGH(TABLA<<1)  // Carga la parte alta de la dirección de tabla en ZH
-00021b e5ea                          LDI		ZL, LOW(TABLA<<1)   // Carga la parte baja de la dirección de la tabla en ZL
-00021c 0fe6                          ADD		ZL, DISPLAYS 
-00021d 9144                          LPM		S_DISPLAY, Z
-00021e b94b                          OUT		PORTD, S_DISPLAY
-00021f 940c 0235                 	JMP		FIN_T0
+000246 e0f5                      	LDI		ZH, HIGH(TABLA<<1)  // Carga la parte alta de la dirección de tabla en ZH
+000247 ebe2                          LDI		ZL, LOW(TABLA<<1)   // Carga la parte baja de la dirección de la tabla en ZL
+000248 0fe6                          ADD		ZL, DISPLAYS 
+000249 9144                          LPM		S_DISPLAY, Z
+00024a b94b                          OUT		PORTD, S_DISPLAY
+00024b 940c 0261                 	JMP		FIN_T0
                                  DISPLAY_3:
                                  	//ENCENDER SOLO EL TRANSISTOR NECESARIO 
-000221 9a2c                      	SBI		PORTB, 4
-000222 9160 0107                 	LDS		DISPLAYS, DISPLAY3
+00024d 9a2c                      	SBI		PORTB, 4
+00024e 9160 0107                 	LDS		DISPLAYS, DISPLAY3
                                  	//SOLO PARA PROBAR QUE EL MUX FUNCIONE 
-000224 e0f5                      	LDI		ZH, HIGH(TABLA<<1)  // Carga la parte alta de la dirección de tabla en ZH
-000225 e5ea                          LDI		ZL, LOW(TABLA<<1)   // Carga la parte baja de la dirección de la tabla en ZL
-000226 0fe6                          ADD		ZL, DISPLAYS
-000227 9144                          LPM		S_DISPLAY, Z
-000228 b94b                          OUT		PORTD, S_DISPLAY
-000229 940c 0235                 	JMP		FIN_T0
+000250 e0f5                      	LDI		ZH, HIGH(TABLA<<1)  // Carga la parte alta de la dirección de tabla en ZH
+000251 ebe2                          LDI		ZL, LOW(TABLA<<1)   // Carga la parte baja de la dirección de la tabla en ZL
+000252 0fe6                          ADD		ZL, DISPLAYS
+000253 9144                          LPM		S_DISPLAY, Z
+000254 b94b                          OUT		PORTD, S_DISPLAY
+000255 940c 0261                 	JMP		FIN_T0
                                  DISPLAY_4:
                                  	//ENCENDER SOLO EL TRANSISTOR NECESARIO 
-00022b 9a2d                      	SBI		PORTB, 5
-00022c 9160 0108                 	LDS		DISPLAYS, DISPLAY4
+000257 9a2d                      	SBI		PORTB, 5
+000258 9160 0108                 	LDS		DISPLAYS, DISPLAY4
                                  	//SOLO PARA PROBAR QUE EL MUX FUNCIONE 
-00022e e0f5                      	LDI		ZH, HIGH(TABLA<<1)  // Carga la parte alta de la dirección de tabla en ZH
-00022f e5ea                          LDI		ZL, LOW(TABLA<<1)   // Carga la parte baja de la dirección de la tabla en ZL
-000230 0fe6                          ADD		ZL, DISPLAYS
-000231 9144                          LPM		S_DISPLAY, Z
-000232 b94b                          OUT		PORTD, S_DISPLAY
-000233 940c 0235                 	JMP		FIN_T0
+00025a e0f5                      	LDI		ZH, HIGH(TABLA<<1)  // Carga la parte alta de la dirección de tabla en ZH
+00025b ebe2                          LDI		ZL, LOW(TABLA<<1)   // Carga la parte baja de la dirección de la tabla en ZL
+00025c 0fe6                          ADD		ZL, DISPLAYS
+00025d 9144                          LPM		S_DISPLAY, Z
+00025e b94b                          OUT		PORTD, S_DISPLAY
+00025f 940c 0261                 	JMP		FIN_T0
                                  FIN_T0:
-000235 910f                          POP R16
-000236 bf0f                          OUT SREG, R16
-000237 910f                          POP R16
-000238 9518                          RETI
+000261 910f                          POP R16
+000262 bf0f                          OUT SREG, R16
+000263 910f                          POP R16
+000264 9518                          RETI
                                  
                                  /*************** INTERRUPCIONES DEL T1************/ 
                                  TMR1_ISR:
-000239 930f                      	PUSH	R16
-00023a b70f                      	IN		R16, SREG
-00023b 930f                      	PUSH	R16
-00023c e004                      	LDI		R16, 0b00000100
+000265 930f                      	PUSH	R16
+000266 b70f                      	IN		R16, SREG
+000267 930f                      	PUSH	R16
+000268 e004                      	LDI		R16, 0b00000100
                                  	//PAPADEO DE LOS LEDS 
-00023d 2740                      	EOR		S_DISPLAY, R16
-00023e b94b                      	OUT		PORTD, S_DISPLAY
+000269 2740                      	EOR		S_DISPLAY, R16
+00026a b94b                      	OUT		PORTD, S_DISPLAY
                                  
                                  	//Conteo de Tiempo 
-00023f 9150 0100                 	LDS     CONTADOR_TIEMPO, MINUTO
-000241 9553                          INC     CONTADOR_TIEMPO
-000242 9350 0100                     STS     MINUTO, CONTADOR_TIEMPO
+00026b 9150 0100                 	LDS     CONTADOR_TIEMPO, MINUTO
+00026d 9553                          INC     CONTADOR_TIEMPO
+00026e 9350 0100                     STS     MINUTO, CONTADOR_TIEMPO
                                  
                                      ; Verificar si ya pasó el tiempo necesario 
-000244 3051                          CPI     CONTADOR_TIEMPO, CICLO	
-000245 f439                          BRNE    FIN_TMR1  ; Si no ha llegado salir
-000246 2755                      	CLR		CONTADOR_TIEMPO
-000247 9350 0100                 	STS     MINUTO, CONTADOR_TIEMPO 
+000270 3051                          CPI     CONTADOR_TIEMPO, CICLO	
+000271 f439                          BRNE    FIN_TMR1  ; Si no ha llegado salir
+000272 2755                      	CLR		CONTADOR_TIEMPO
+000273 9350 0100                 	STS     MINUTO, CONTADOR_TIEMPO 
                                  	//Resetear la bandera
-000249 e001                      	LDI		R16, 0x01
-00024a 2780                      	EOR		ACCION, R16
-00024b 940c 024d                 	JMP		FIN_TMR1
+000275 e001                      	LDI		R16, 0x01
+000276 2780                      	EOR		ACCION, R16
+000277 940c 0279                 	JMP		FIN_TMR1
                                  FIN_TMR1: 
-00024d 910f                      	POP		R16
-00024e bf0f                      	OUT		SREG, R16
-00024f 910f                      	POP		R16
-000250 9518                      	RETI
+000279 910f                      	POP		R16
+00027a bf0f                      	OUT		SREG, R16
+00027b 910f                      	POP		R16
+00027c 9518                      	RETI
                                  
                                  INC_UMIN: 
                                  	//Resetear la bandera
-000251 e001                      	LDI		R16, 0x01
-000252 2780                      	EOR		ACCION, R16
+00027d e001                      	LDI		R16, 0x01
+00027e 2780                      	EOR		ACCION, R16
                                  	// SUMAR A UMIN 
-000253 9150 0101                 	LDS     CONTADOR_TIEMPO, UMIN 
-000255 3059                      	CPI		CONTADOR_TIEMPO, MAX_UNI ; COMPARAR PARA VER SI SUPERO UNIDADES 
-000256 f029                      	BREQ	OFU
-000257 9553                      	INC		CONTADOR_TIEMPO
-000258 9350 0101                 	STS		UMIN, CONTADOR_TIEMPO 
-00025a 940c 029a                 	JMP     RETORNOH
+00027f 9150 0101                 	LDS     CONTADOR_TIEMPO, UMIN 
+000281 3059                      	CPI		CONTADOR_TIEMPO, MAX_UNI ; COMPARAR PARA VER SI SUPERO UNIDADES 
+000282 f029                      	BREQ	OFU
+000283 9553                      	INC		CONTADOR_TIEMPO
+000284 9350 0101                 	STS		UMIN, CONTADOR_TIEMPO 
+000286 940c 02c6                 	JMP     RETORNOH
                                  
                                  OFU: 
-00025c e050                          LDI     CONTADOR_TIEMPO, 0x00        ; Reiniciar unidades de minutos
-00025d 9350 0101                     STS     UMIN, CONTADOR_TIEMPO
-00025f 9150 0102                     LDS     CONTADOR_TIEMPO, DMIN        ; Cargar decenas de minutos
-000261 3055                          CPI     CONTADOR_TIEMPO, MAX_DEC     ; Verificar si DMIN == 5
-000262 f029                          BREQ    OFDH                         ; Si es 5, reiniciar decenas y unidades
-000263 9553                          INC     CONTADOR_TIEMPO              ; Si no, incrementar DMIN
-000264 9350 0102                     STS     DMIN, CONTADOR_TIEMPO
-000266 940c 029a                     JMP     RETORNOH
+000288 e050                          LDI     CONTADOR_TIEMPO, 0x00        ; Reiniciar unidades de minutos
+000289 9350 0101                     STS     UMIN, CONTADOR_TIEMPO
+00028b 9150 0102                     LDS     CONTADOR_TIEMPO, DMIN        ; Cargar decenas de minutos
+00028d 3055                          CPI     CONTADOR_TIEMPO, MAX_DEC     ; Verificar si DMIN == 5
+00028e f029                          BREQ    OFDH                         ; Si es 5, reiniciar decenas y unidades
+00028f 9553                          INC     CONTADOR_TIEMPO              ; Si no, incrementar DMIN
+000290 9350 0102                     STS     DMIN, CONTADOR_TIEMPO
+000292 940c 02c6                     JMP     RETORNOH
                                  OFDH:
-000268 e050                          LDI     CONTADOR_TIEMPO, 0x00        ; Reiniciar unidades de minutos
-000269 9350 0101                     STS     UMIN, CONTADOR_TIEMPO
-00026b 9350 0102                     STS     DMIN, CONTADOR_TIEMPO        ; Reiniciar decenas de minutos
-00026d 9150 0104                     LDS     CONTADOR_TIEMPO, DHORAS      ; Cargar decenas de horas
-00026f 3052                          CPI     CONTADOR_TIEMPO, 0x02        ; Verificar si DHORAS == 2
-000270 f479                          BRNE	OFT		  ; Si es 2, verificar si UHORAS == 4 (24 horas)
-000271 9150 0103                 	LDS     CONTADOR_TIEMPO, UHORAS
-000273 3053                          CPI		CONTADOR_TIEMPO,  0x03
-000274 f4f1                      	BRNE    MAX_FIN_DIA ; MIENTRAS NO SEA 4 IR A LA FUNCION 
-000275 2755                      	CLR		CONTADOR_TIEMPO
-000276 9350 0101                 	STS     UMIN, CONTADOR_TIEMPO
-000278 9350 0102                 	STS     DMIN, CONTADOR_TIEMPO
-00027a 9350 0103                 	STS     UHORAS, CONTADOR_TIEMPO
-00027c 9350 0104                 	STS     DHORAS, CONTADOR_TIEMPO
-00027e 940c 029a                     JMP     RETORNOH
+000294 e050                          LDI     CONTADOR_TIEMPO, 0x00        ; Reiniciar unidades de minutos
+000295 9350 0101                     STS     UMIN, CONTADOR_TIEMPO
+000297 9350 0102                     STS     DMIN, CONTADOR_TIEMPO        ; Reiniciar decenas de minutos
+000299 9150 0104                     LDS     CONTADOR_TIEMPO, DHORAS      ; Cargar decenas de horas
+00029b 3052                          CPI     CONTADOR_TIEMPO, 0x02        ; Verificar si DHORAS == 2
+00029c f479                          BRNE	OFT		  ; Si es 2, verificar si UHORAS == 4 (24 horas)
+00029d 9150 0103                 	LDS     CONTADOR_TIEMPO, UHORAS
+00029f 3053                          CPI		CONTADOR_TIEMPO,  0x03
+0002a0 f4f1                      	BRNE    MAX_FIN_DIA ; MIENTRAS NO SEA 4 IR A LA FUNCION 
+0002a1 2755                      	CLR		CONTADOR_TIEMPO
+0002a2 9350 0101                 	STS     UMIN, CONTADOR_TIEMPO
+0002a4 9350 0102                 	STS     DMIN, CONTADOR_TIEMPO
+0002a6 9350 0103                 	STS     UHORAS, CONTADOR_TIEMPO
+0002a8 9350 0104                 	STS     DHORAS, CONTADOR_TIEMPO
+0002aa 940c 02c6                     JMP     RETORNOH
                                  
                                  OFT: 
                                      // Incrementar decenas 
-000280 9150 0103                 	LDS     CONTADOR_TIEMPO, UHORAS
+0002ac 9150 0103                 	LDS     CONTADOR_TIEMPO, UHORAS
                                  	//Ahora se le suma el contador a las unidades de los min
-000282 3059                      	CPI		CONTADOR_TIEMPO, MAX_UNI
-000283 f029                      	BREQ	MAX_D_TIEMPO
-000284 9553                      	INC		CONTADOR_TIEMPO 		; incrementa la variable
-000285 9350 0103                     STS     UHORAS, CONTADOR_TIEMPO
-000287 940c 029a                 	JMP     RETORNOH
+0002ae 3059                      	CPI		CONTADOR_TIEMPO, MAX_UNI
+0002af f029                      	BREQ	MAX_D_TIEMPO
+0002b0 9553                      	INC		CONTADOR_TIEMPO 		; incrementa la variable
+0002b1 9350 0103                     STS     UHORAS, CONTADOR_TIEMPO
+0002b3 940c 02c6                 	JMP     RETORNOH
                                  MAX_D_TIEMPO: 
-000289 e050                      	LDI     CONTADOR_TIEMPO, 0x00
-00028a 9350 0103                     STS     UHORAS, CONTADOR_TIEMPO ;LIMPIAR UNIDADES 
-00028c 9150 0104                     LDS     CONTADOR_TIEMPO,  DHORAS
-00028e 9553                      	INC		CONTADOR_TIEMPO 
-00028f 9350 0104                 	STS     DHORAS, CONTADOR_TIEMPO
-000291 940c 029a                 	JMP		RETORNOH
+0002b5 e050                      	LDI     CONTADOR_TIEMPO, 0x00
+0002b6 9350 0103                     STS     UHORAS, CONTADOR_TIEMPO ;LIMPIAR UNIDADES 
+0002b8 9150 0104                     LDS     CONTADOR_TIEMPO,  DHORAS
+0002ba 9553                      	INC		CONTADOR_TIEMPO 
+0002bb 9350 0104                 	STS     DHORAS, CONTADOR_TIEMPO
+0002bd 940c 02c6                 	JMP		RETORNOH
                                  MAX_FIN_DIA:
-000293 9150 0103                 	LDS     CONTADOR_TIEMPO, UHORAS
-000295 9553                      	INC		CONTADOR_TIEMPO
-000296 9350 0103                 	STS     UHORAS, CONTADOR_TIEMPO
-000298 940c 029a                 	JMP		RETORNOH
+0002bf 9150 0103                 	LDS     CONTADOR_TIEMPO, UHORAS
+0002c1 9553                      	INC		CONTADOR_TIEMPO
+0002c2 9350 0103                 	STS     UHORAS, CONTADOR_TIEMPO
+0002c4 940c 02c6                 	JMP		RETORNOH
                                  
                                  RETORNOH:
-00029a 9508                      	RET
+0002c6 9508                      	RET
                                  /************ CONFIGURACIÓN T0 *********/ 
                                  INIT_TMR0:
-00029b e002                      	LDI R16, (1<<CS01)//Configurar el prescales en 64 bits
-00029c bd05                          OUT TCCR0B, R16																																					
-00029d e006                          LDI R16, T0VALUE // Valor inicial de TCNT0 para un delay de 2 ms 
-00029e bd06                          OUT TCNT0, R16
-00029f 9508                         	RET																																																																																																				
+0002c7 e002                      	LDI R16, (1<<CS01)//Configurar el prescales en 64 bits
+0002c8 bd05                          OUT TCCR0B, R16																																					
+0002c9 e006                          LDI R16, T0VALUE // Valor inicial de TCNT0 para un delay de 2 ms 
+0002ca bd06                          OUT TCNT0, R16
+0002cb 9508                         	RET																																																																																																				
                                  INIT_TMR1:
-0002a0 e00b                      	LDI R16, HIGH(T1VALUE)
-0002a1 9300 0085                 	STS	TCNT1H, R16
-0002a3 ec0d                      	LDI R16, LOW(T1VALUE)
-0002a4 9300 0084                 	STS	TCNT1L, R16
+0002cc e00b                      	LDI R16, HIGH(T1VALUE)
+0002cd 9300 0085                 	STS	TCNT1H, R16
+0002cf ec0d                      	LDI R16, LOW(T1VALUE)
+0002d0 9300 0084                 	STS	TCNT1L, R16
                                  
-0002a6 e000                      	LDI	R16, 0x00
-0002a7 9300 0080                 	STS	TCCR1A, R16
-0002a9 e002                      	LDI R16, (1<<CS01) // configuración para el prescaler de 8 
-0002aa 9300 0081                     STS TCCR1B, R16																																					
+0002d2 e000                      	LDI	R16, 0x00
+0002d3 9300 0080                 	STS	TCCR1A, R16
+0002d5 e002                      	LDI R16, (1<<CS01) // configuración para el prescaler de 8 
+0002d6 9300 0081                     STS TCCR1B, R16																																					
                                  
-0002ac 9508                         	RET	
+0002d8 9508                         	RET	
                                  	
                                  // Tabla para 7 segmentos 
-0002ad 0a7b
-0002ae 9bb3
-0002af d9ca
-0002b0 0bf9
-0002b1 dbfb
-0002b2 f8eb
-0002b3 b471
+0002d9 0a7b
+0002da 9bb3
+0002db d9ca
+0002dc 0bf9
+0002dd dbfb
+0002de f8eb
+0002df b471
 
 
 RESOURCE USE INFORMATION
@@ -1749,37 +1789,37 @@ counted separately from r26..r31 here.
 "ATmega328P" register use summary:
 x  :   0 y  :   0 z  :   4 r0 :   0 r1 :   0 r2 :   0 r3 :   0 r4 :   0 
 r5 :   0 r6 :   0 r7 :   0 r8 :   0 r9 :   0 r10:   0 r11:   0 r12:   0 
-r13:   0 r14:   0 r15:   0 r16: 106 r17:   8 r18:  14 r19:   1 r20:  10 
-r21:  49 r22:   9 r23: 110 r24:  12 r25:   0 r26:   0 r27:   0 r28:   0 
+r13:   0 r14:   0 r15:   0 r16: 106 r17:   8 r18:  15 r19:   1 r20:  10 
+r21:  57 r22:   9 r23: 117 r24:  12 r25:   0 r26:   0 r27:   0 r28:   0 
 r29:   0 r30:   8 r31:   4 
 Registers used: 12 out of 35 (34.3%)
 
 "ATmega328P" instruction use summary:
 .lds  :   0 .sts  :   0 adc   :   0 add   :   4 adiw  :   0 and   :   0 
 andi  :   0 asr   :   0 bclr  :   0 bld   :   0 brbc  :   0 brbs  :   0 
-brcc  :   0 brcs  :   0 break :   0 breq  :  24 brge  :   0 brhc  :   0 
+brcc  :   0 brcs  :   0 break :   0 breq  :  25 brge  :   0 brhc  :   0 
 brhs  :   0 brid  :   0 brie  :   0 brlo  :   0 brlt  :   0 brmi  :   0 
-brne  :  11 brpl  :   0 brsh  :   0 brtc  :   0 brts  :   0 brvc  :   0 
-brvs  :   0 bset  :   0 bst   :   0 call  :   7 cbi   :  17 cbr   :   0 
-clc   :   0 clh   :   0 cli   :   1 cln   :   0 clr   :  14 cls   :   0 
+brne  :  13 brpl  :   0 brsh  :   0 brtc  :   0 brts  :   0 brvc  :   0 
+brvs  :   0 bset  :   0 bst   :   0 call  :   7 cbi   :  18 cbr   :   0 
+clc   :   0 clh   :   0 cli   :   1 cln   :   0 clr   :  13 cls   :   0 
 clt   :   0 clv   :   0 clz   :   0 com   :   0 cp    :   0 cpc   :   0 
-cpi   :  37 cpse  :   4 dec   :   4 eor   :   7 fmul  :   0 fmuls :   0 
-fmulsu:   0 icall :   0 ijmp  :   0 in    :   3 inc   :  17 jmp   :  57 
-ld    :   0 ldd   :   0 ldi   :  56 lds   :  46 lpm   :   8 lsl   :   0 
+cpi   :  39 cpse  :   4 dec   :   5 eor   :   7 fmul  :   0 fmuls :   0 
+fmulsu:   0 icall :   0 ijmp  :   0 in    :   3 inc   :  17 jmp   :  63 
+ld    :   0 ldd   :   0 ldi   :  58 lds   :  52 lpm   :   8 lsl   :   0 
 lsr   :   0 mov   :   0 movw  :   0 mul   :   0 muls  :   0 mulsu :   0 
 neg   :   0 nop   :   0 or    :   0 ori   :   0 out   :  18 pop   :   6 
 push  :   6 rcall :   0 ret   :   4 reti  :   3 rjmp  :   9 rol   :   0 
 ror   :   0 sbc   :   0 sbci  :   0 sbi   :   8 sbic  :   0 sbis  :   4 
 sbiw  :   0 sbr   :   0 sbrc  :   5 sbrs  :   0 sec   :   0 seh   :   0 
 sei   :   1 sen   :   0 ser   :   0 ses   :   0 set   :   0 sev   :   0 
-sez   :   0 sleep :   0 spm   :   0 st    :   0 std   :   0 sts   :  85 
+sez   :   0 sleep :   0 spm   :   0 st    :   0 std   :   0 sts   :  91 
 sub   :   0 subi  :   0 swap  :   0 tst   :   0 wdr   :   0 
 Instructions used: 28 out of 113 (24.8%)
 
 "ATmega328P" memory use summary [bytes]:
 Segment   Begin    End      Code   Data   Used    Size   Use%
 ---------------------------------------------------------------
-[.cseg] 0x000000 0x00056a   1314     16   1330   32768   4.1%
+[.cseg] 0x000000 0x0005c2   1402     16   1418   32768   4.3%
 [.dseg] 0x000100 0x000113      0     19     19    2048   0.9%
 [.eseg] 0x000000 0x000000      0      0      0    1024   0.0%
 

@@ -114,7 +114,7 @@ SETUP:
 
 	/************** INCIALIZAR VARIABLES  ********/
 	CLR		CONTADORT0 
-	CLR		MODO
+	LDI		MODO, 0x00
 	CLR		CONTADORT1L
 	CLR		DISPLAYS
 	CLR		CONTADOR_TIEMPO 
@@ -153,28 +153,44 @@ SETUP:
 /************** MAINLOOP  ********/
 MAIN:  
 	//OUT		PORTB, CONTADOR // mostrar el valor de el contador en el puerto B
-	//SBI		PORTD, 2   
-	CPI		MODO, 0x00 
-	BREQ	HORA
-	CPI		MODO, 0x01 
-	BREQ	FECHA
-	CPI		MODO, 0x02
-	BREQ	C_HORA
-	CPI		MODO, 0x03 
-	BREQ	C_FECHA
-	CPI		MODO, 0x04 
-	JMP		C_ALARMA
+	//SBI		PORTD, 2  
 	CPI		MODO, 0x05
-	JMP		APAGAR_ALARMA
-	
+	BREQ	APAGAR_ALARMA_S 
+	CPI		MODO, 0x00 
+	BREQ	HORA_S
+	CPI		MODO, 0x01 
+	BREQ	FECHA_S
+	CPI		MODO, 0x02
+	BREQ	C_HORA_S
+	CPI		MODO, 0x03 
+	BREQ	C_FECHA_S
+	CPI		MODO, 0x04 
+	JMP		C_ALARMA_S
+	CPI		MODO, 0x05
+	BREQ	APAGAR_ALARMA_S
     RJMP	MAIN
 
+
+/***************** FUNCIONES PARA SALTOS MÁS LARGOS*****************/
+HORA_S:
+	JMP		HORA
+FECHA_S:
+	JMP		FECHA
+C_HORA_S:
+	JMP		C_HORA
+C_FECHA_S:
+	JMP		C_FECHA
+C_ALARMA_S:
+	JMP		C_ALARMA
+APAGAR_ALARMA_S:
+	JMP		APAGAR_ALARMA
 /*************** MODOS ***********************/
 HORA:
 	SBRC	ACCION, 0
 	CALL	INC_UMIN
 	SBI		PORTB, 0
 	CBI		PORTB, 1
+	CBI		PORTC, 3
 	LDS     CONTADOR_TIEMPO, UMIN  ; Tomar el valor de unidades y guardarlo en el registro 
 	STS		DISPLAY1, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
 	LDS     CONTADOR_TIEMPO, DMIN ; Tomar el valor de unidades y guardarlo en el registro 
@@ -211,6 +227,15 @@ C_HORA:
 	STS		DISPLAY3, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 3
 	LDS     CONTADOR_BOTONES, UD_M_H  ; Tomar el valor de unidades y guardarlo en el registro 
 	STS		DISPLAY4, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
+	//Establecer el inicio en los valores de configuración de hora 
+	LDS     CONTADOR_TIEMPO, UD_U_H 
+	STS		UMIN, CONTADOR_TIEMPO
+	LDS     CONTADOR_TIEMPO, UD_D_H 
+	STS		DMIN, CONTADOR_TIEMPO
+	LDS     CONTADOR_TIEMPO, UD_C_H 
+	STS		UHORAS, CONTADOR_TIEMPO
+	LDS     CONTADOR_TIEMPO, UD_M_H 
+	STS		DHORAS, CONTADOR_TIEMPO
 	RJMP	MAIN
 
 C_FECHA:
@@ -235,7 +260,7 @@ C_FECHA:
 C_ALARMA:
 	CBI		PORTB, 0
 	CBI		PORTB, 1
-	SBI		PORTC, 4
+	SBI		PORTC, 3
 	RJMP	MAIN
 
 APAGAR_ALARMA:
@@ -475,29 +500,44 @@ OUFU2:
 	LDI		CONTADOR_BOTONES, 0x05
 	STS     UD_D_H, CONTADOR_BOTONES
 	JMP		RETORNO_BOTON
+
 RESTA_HORA_DECENAS:
-	//Para solo modificar en un solo modo 
-	LDS     CONTADOR_BOTONES, UD_C_H
-	//Ahora se le RESTA el contador a las unidades de los min
-	CPI		CONTADOR_BOTONES,0x00
-	BREQ	OUFD
-	DEC		CONTADOR_BOTONES		; incrementa la variable
-    STS     UD_C_H, CONTADOR_BOTONES
-	JMP		RETORNO_BOTON
-OUFD:
-	LDI		CONTADOR_BOTONES, 0x04
-	STS     UD_C_H, CONTADOR_BOTONES ; Limpiar las unidades
 	LDS     CONTADOR_BOTONES, UD_M_H
-	CPI		CONTADOR_BOTONES, 0x00
-	BREQ	OUFD2
+	CPI     CONTADOR_BOTONES, 0x00
+	BRNE    UFU_MESES   // Salta si no es el primer caso
+	LDS     CONTADOR_BOTONES, UD_C_H  
+    CPI		CONTADOR_BOTONES, 0x00    
+	BRNE    DECREMENTAR_UNI         // si es 0 saltar 
+	// si los dos son 0 establecer el contador en 24
+	LDI		CONTADOR_BOTONES, 0x04
+	STS		UD_C_H, CONTADOR_BOTONES   
+	LDI		CONTADOR_BOTONES, 0x02
+	STS		UD_M_H, CONTADOR_BOTONES  
+	JMP		RETORNO_BOTON
+UFU_MESES: 
+	LDS     CONTADOR_BOTONES, UD_C_H // Si las decenas no son 0 d
+	CPI		CONTADOR_BOTONES, 0x00 // comparar con 0
+	BREQ	DECREMENTAR_DEC // si es 0 saltar 
+	DEC		CONTADOR_BOTONES // si no es o decrementar las unidades normalmente. 
+	STS     UD_C_H, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+
+DECREMENTAR_DEC:
+    // Si las unidades son 0, decrementa las decenas
+	LDS     CONTADOR_BOTONES, UD_M_H
 	DEC		CONTADOR_BOTONES
 	STS     UD_M_H, CONTADOR_BOTONES
+	// establecer las unidades en 9 
+	LDI     CONTADOR_BOTONES, 0x09
+	STS     UD_C_H, CONTADOR_BOTONES
 	JMP		RETORNO_BOTON
-OUFD2:
-	LDS     CONTADOR_BOTONES, UD_M_H
-	LDI		CONTADOR_BOTONES, 0x02
-	STS     UD_M_H, CONTADOR_BOTONES
+DECREMENTAR_UNI:
+    // Si las unidades no son 0, solo decrementarlas
+	LDS     CONTADOR_BOTONES, UD_C_H
+	DEC		CONTADOR_BOTONES
+	STS     UD_C_H, CONTADOR_BOTONES
 	JMP		RETORNO_BOTON
+
 
 RESTA_FECHA:
 	JMP		RETORNO_BOTON	
