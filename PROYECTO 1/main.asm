@@ -24,27 +24,30 @@
 .def	ACCION = R24 
 .dseg 
 .org	SRAM_START 
-MINUTO:		.byte	1 ; para registar que ya paso un min y debe cambiar umin 
-UMIN:		.byte	1 ; la variable que guarda el conteo de unidades de minutos 
-DMIN:		.byte	1 ; la variable que guarda el conteo de decenas de minutos 
-UHORAS:		.byte	1 ; la variable que guarda la unidades el conteo de horas 
-DHORAS:		.byte	1 ; la varible que guarda las decenas en el conteo de horas 
-DISPLAY1:	.byte	1 ;variables para guardar lo que mostrará el display según el modo
-DISPLAY2:	.byte	1 ;variables para guardar lo que mostrará el display según el modo
-DISPLAY3:	.byte	1 ;variables para guardar lo que mostrará el display según el modo
-DISPLAY4:	.byte	1 ;variables para guardar lo que mostrará el display según el modo
-BOTON:		.byte	1 ; variable para el contador de l botón 
-U_D:		.byte	1 ; variable para selecciónar entre configuración de horas/meses o min/días 
-UD_U_H:		.byte	1 ;variable para configurar las	unidades de minutos
-UD_D_H:		.byte	1 ;variable para condigurar las	decenas de minutos 
-UD_C_H:		.byte	1 ;variable para condigurar las	unidades de horas
-UD_M_H:		.byte	1 ;variable para condigurar las	decenas de horas 
+MINUTO:				.byte	1 ; para registar que ya paso un min y debe cambiar umin 
+UMIN:				.byte	1 ; la variable que guarda el conteo de unidades de minutos 
+DMIN:				.byte	1 ; la variable que guarda el conteo de decenas de minutos 
+UHORAS:				.byte	1 ; la variable que guarda la unidades el conteo de horas 
+DHORAS:				.byte	1 ; la varible que guarda las decenas en el conteo de horas 
+DISPLAY1:			.byte	1 ;variables para guardar lo que mostrará el display según el modo
+DISPLAY2:			.byte	1 ;variables para guardar lo que mostrará el display según el modo
+DISPLAY3:			.byte	1 ;variables para guardar lo que mostrará el display según el modo
+DISPLAY4:			.byte	1 ;variables para guardar lo que mostrará el display según el modo
+BOTON:				.byte	1 ; variable para el contador de l botón 
+U_D:				.byte	1 ; variable para selecciónar entre configuración de horas/meses o min/días 
+UD_U_H:				.byte	1 ;variable para configurar las	unidades de minutos
+UD_D_H:				.byte	1 ;variable para condigurar las	decenas de minutos 
+UD_C_H:				.byte	1 ;variable para condigurar las	unidades de horas
+UD_M_H:				.byte	1 ;variable para condigurar las	decenas de horas 
 
-UD_U_F:		.byte	1 ;variable para configurar las	unidades de minutos
-UD_D_F:		.byte	1 ;variable para condigurar las	decenas de minutos 
-UD_C_F:		.byte	1 ;variable para condigurar las	unidades de horas
-UD_M_F:		.byte	1 ;variable para condigurar las	decenas de horas 
+UD_U_F:				.byte	1 ;variable para configurar las	unidades de minutos
+UD_D_F:				.byte	1 ;variable para condigurar las	decenas de minutos 
+UD_C_F:				.byte	1 ;variable para condigurar las	unidades de horas
+UD_M_F:				.byte	1 ;variable para condigurar las	decenas de horas 
 
+LIMITE_U:			.byte	1 ;variable para condigurar las	decenas de horas 
+LIMITE_D:			.byte	1 ;variable para condigurar las	decenas de horas 
+CONTEO_MESES:		.byte	1 ;variable para condigurar las	decenas de horas
 .cseg
 .org 0x0000
     RJMP SETUP  
@@ -114,7 +117,7 @@ SETUP:
 
 	/************** INCIALIZAR VARIABLES  ********/
 	CLR		CONTADORT0 
-	LDI		MODO, 0x00
+	LDI		MODO, 0x03
 	CLR		CONTADORT1L
 	CLR		DISPLAYS
 	CLR		CONTADOR_TIEMPO 
@@ -137,10 +140,17 @@ SETUP:
 	STS		UD_D_H, R16 
 	STS		UD_C_H, R16
 	STS		UD_M_H, R16
+	LDI		R16, 0x01
 	STS		UD_U_F, R16	
+	LDI		R16, 0x00
 	STS		UD_D_F, R16 
+	LDI		R16, 0x01
 	STS		UD_C_F, R16
+	LDI		R16, 0x00
 	STS		UD_M_F, R16
+	STS		LIMITE_U, R16
+	STS		LIMITE_D, R16
+	STS		CONTEO_MESES, R16
 	CLR		ACCION
 
 	/************** ACTIVAR LAS INTERRUPCIONES GLOBALES ********/ 
@@ -246,6 +256,7 @@ C_FECHA:
 	CALL	SUMA 
 	SBRC	ACCION, 2
 	CALL	RESTA
+
 	//Suma y resta de los botones 
 	LDS     CONTADOR_BOTONES, UD_U_F  ; Tomar el valor de unidades y guardarlo en el registro 
 	STS		DISPLAY1, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
@@ -315,7 +326,7 @@ F_ISR:
     OUT SREG, R16
     POP R16
     RETI
-//SUBRUTINAS PARA EL BOTÓN DE SUMA 
+/***********************************************SUBRUTINAS PARA EL BOTÓN DE SUMA *************************************************************/
 SUMA:    
     LDI     R16, 0b00000010   ; Cargar el valor en R16
     EOR     ACCION, R16       ; Alternar el bit correspondiente en ACCION
@@ -333,6 +344,7 @@ VERIFICAR_FECHA1:
 
 LLAMAR_RETORNO:
     JMP     RETORNO_BOTON     ; Usar JMP para saltar a cualquier parte del código
+/************************************************************SUBRUTINAS PARA EL BOTÓN DE SUMA EN MODO HORA *****************************/
 SUMA_HORA:
 	LDS     CONTADOR_BOTONES, U_D
 	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
@@ -367,7 +379,7 @@ SUMA_HORA_DECENAS:
     CPI     CONTADOR_BOTONES, 0x02        ; Verificar si DHORAS == 2
     BRNE	OFT_C		  ; Si es 2, verificar si UHORAS == 4 (24 horas)
 	LDS     CONTADOR_BOTONES, UD_C_H
-    CPI		CONTADOR_BOTONES,  0x04
+    CPI		CONTADOR_BOTONES,  0x03
 	BRNE    MAX_FIN_DIA_C ; MIENTRAS NO SEA 4 IR A LA FUNCION 
 	CLR		CONTADOR_BOTONES
 	STS     UD_U_H, CONTADOR_BOTONES
@@ -400,15 +412,27 @@ MAX_FIN_DIA_C:
 
 
 
-
+/************************************************************SUBRUTINAS PARA EL BOTÓN DE SUMA EN MODO FECHA *****************************/
 SUMA_FECHA:
 	LDS     CONTADOR_BOTONES, U_D
 	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
-	BREQ	SUMA_FECHA_UNIDADES 
+	BREQ	SUMA_FECHA_UNIDADES_C 
 	CPI		CONTADOR_BOTONES, 0x01
 	BREQ	SUMA_FECHA_DECENAS
 	JMP		RETORNO_BOTON
-SUMA_FECHA_UNIDADES:
+SUMA_FECHA_UNIDADES_C:
+	//Para incrementar la variable que usaremos en días
+	LDS     CONTADOR_BOTONES, CONTEO_MESES
+	CPI		CONTADOR_BOTONES, 12
+	BREQ	CONTEO_MESES_CLR
+	INC		CONTADOR_BOTONES
+	STS		CONTEO_MESES, CONTADOR_BOTONES
+	JMP		SUMA_FECHA_UNIDADES
+CONTEO_MESES_CLR: 
+	LDI		CONTADOR_BOTONES, 0x00
+	STS		CONTEO_MESES, CONTADOR_BOTONES
+	JMP		SUMA_FECHA_UNIDADES
+SUMA_FECHA_UNIDADES:	
 	//Para solo modificar en un solo modo 
 	LDS     CONTADOR_BOTONES, UD_D_F
     CPI		CONTADOR_BOTONES, 0x01
@@ -416,8 +440,9 @@ SUMA_FECHA_UNIDADES:
 	LDS     CONTADOR_BOTONES, UD_U_F
     CPI		CONTADOR_BOTONES, 0x02
 	BRNE    MAX_FIN
-	CLR		CONTADOR_BOTONES
+	LDI		CONTADOR_BOTONES,0x1
 	STS     UD_U_F, CONTADOR_BOTONES
+	CLR		CONTADOR_BOTONES
 	STS     UD_D_F, CONTADOR_BOTONES
 	JMP		RETORNO_BOTON
 	
@@ -446,12 +471,62 @@ MAX_D:
 	JMP		RETORNO_BOTON
 
 SUMA_FECHA_DECENAS: 
-	JMP		RETORNO_BOTON 
+	//CARGAR EL VALOR DE LIMITE PARA UNIDADES
+	LDS		CONTADOR_BOTONES, CONTEO_MESES
+	LDI		ZH, HIGH(TABLA_DIAS_U<<1)  // Carga la parte alta de la dirección de tabla en ZH
+    LDI		ZL, LOW(TABLA_DIAS_U<<1)   // Carga la parte baja de la dirección de la tabla en ZL
+    ADD		ZL, CONTADOR_BOTONES //Sumar la posición del contador de meses
+	LPM		R16, Z
+	STS		LIMITE_U, R16
+	//CARGAR EL VALOR DEL LIMITE PARA LAS DECENAS 
+	LDS		CONTADOR_BOTONES, CONTEO_MESES
+	LDI		ZH, HIGH(TABLA_DIAS_D<<1)  // Carga la parte alta de la dirección de tabla en ZH
+    LDI		ZL, LOW(TABLA_DIAS_D<<1)   // Carga la parte baja de la dirección de la tabla en ZL
+    ADD		ZL, CONTADOR_BOTONES //Sumar la posición del contador de meses
+	LPM		R16, Z
+	STS		LIMITE_D, R16
+	//LÓGICA DE COMPARACIÓN 
+	LDS     CONTADOR_BOTONES, UD_M_F
+	LDS		R16, LIMITE_D
+    CP		CONTADOR_BOTONES, R16 //Comparar con el límite de las decenas 
+    BRNE    MES_N
+	LDS		R16, LIMITE_U
+	LDS     CONTADOR_BOTONES, UD_C_F
+    CP		CONTADOR_BOTONES, R16 //COMPARAR CON EL LIMITE DE UNIDADES 
+	BRNE    MAX_FIN_MESES
+	LDI		CONTADOR_BOTONES, 0x01
+	STS     UD_C_F, CONTADOR_BOTONES
+	CLR		CONTADOR_BOTONES
+	STS     UD_M_F, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON	
 	
+MES_N: 
+    // Incrementa las decenas y verificar si no ha exedido unidades 
+	LDS     CONTADOR_BOTONES, UD_C_F
+	//Ahora se le suma el contador a las unidades de los min
+	CPI		CONTADOR_BOTONES,MAX_UNI //verifica si no es 9
+	BREQ	MAX_DM
+	INC		CONTADOR_BOTONES		; incrementa la variable
+    STS     UD_C_F, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+
+MAX_DM:
+	LDI     CONTADOR_BOTONES, 0x00
+    STS     UD_C_F, CONTADOR_BOTONES ;LIMPIAR UNIDADES 
+    LDS     CONTADOR_BOTONES, UD_M_F
+	INC		CONTADOR_BOTONES ; SUMAR EN DECENAS
+	STS     UD_M_F, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+
+MAX_FIN_MESES:
+	LDS     CONTADOR_BOTONES, UD_C_F
+	INC		CONTADOR_BOTONES
+	STS     UD_C_F, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
 //Retorno, se colocó aquí para lograr hacer los saltos con JMP y BRNE 
 RETORNO_BOTON:
 	RET
-//SUBRUTINAS PARA EL BOTÓN DE RESTA 
+/***********************************************SUBRUTINAS PARA EL BOTÓN DE RESTA ***********************************************************************************/
 
 RESTA:    
     LDI     R16, 0b00000100      ; Cargar el valor en R16
@@ -467,9 +542,10 @@ VERIFICAR_MODO:
 VERIFICAR_FECHA:
     ; Comprobar si MODO == 0x03
     CPI     MODO, 0x03
-    BRNE    RETORNO_BOTON        ; Si no es igual, regresar
+    BRNE    LLAMAR_R        ; Si no es igual, regresar
     JMP     RESTA_FECHA          ; Si es igual, saltar a RESTA_FECHA
-
+LLAMAR_R: 
+	JMP		RETORNO_BOTON
 RESTA_HORA:
 	LDS     CONTADOR_BOTONES, U_D
 	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
@@ -504,17 +580,17 @@ OUFU2:
 RESTA_HORA_DECENAS:
 	LDS     CONTADOR_BOTONES, UD_M_H
 	CPI     CONTADOR_BOTONES, 0x00
-	BRNE    UFU_MESES   // Salta si no es el primer caso
+	BRNE    UFU_HORAS  // Salta si no es el primer caso
 	LDS     CONTADOR_BOTONES, UD_C_H  
     CPI		CONTADOR_BOTONES, 0x00    
 	BRNE    DECREMENTAR_UNI         // si es 0 saltar 
 	// si los dos son 0 establecer el contador en 24
-	LDI		CONTADOR_BOTONES, 0x04
+	LDI		CONTADOR_BOTONES, 0x03
 	STS		UD_C_H, CONTADOR_BOTONES   
 	LDI		CONTADOR_BOTONES, 0x02
 	STS		UD_M_H, CONTADOR_BOTONES  
 	JMP		RETORNO_BOTON
-UFU_MESES: 
+UFU_HORAS: 
 	LDS     CONTADOR_BOTONES, UD_C_H // Si las decenas no son 0 d
 	CPI		CONTADOR_BOTONES, 0x00 // comparar con 0
 	BREQ	DECREMENTAR_DEC // si es 0 saltar 
@@ -538,9 +614,126 @@ DECREMENTAR_UNI:
 	STS     UD_C_H, CONTADOR_BOTONES
 	JMP		RETORNO_BOTON
 
-
+/************************************************************SUBRUTINAS PARA EL BOTÓN DE RESTA EN MODO FECHA UNIDADES *****************************/
 RESTA_FECHA:
-	JMP		RETORNO_BOTON	
+    LDS     CONTADOR_BOTONES, U_D
+    CPI     CONTADOR_BOTONES, 0x00  
+    BREQ    RESTA_FECHA_UNIDADES_C   
+    CPI     CONTADOR_BOTONES, 0x01   
+    BREQ    RESTA_FECHA_DECENAS
+    JMP     RETORNO_BOTON
+
+RESTA_FECHA_UNIDADES_C:
+    ; Para decrementar los meses
+    LDS     CONTADOR_BOTONES, CONTEO_MESES
+    CPI     CONTADOR_BOTONES, 0x00   
+    BREQ    CONTEO_MESES_CLR_R       ; Si es 0, reinicia a 12
+    DEC     CONTADOR_BOTONES        
+    STS     CONTEO_MESES, CONTADOR_BOTONES
+    JMP     RESTA_FECHA_UNIDADES
+
+CONTEO_MESES_CLR_R:
+    ; Si llega a 0, reiniciar a 12
+    LDI     CONTADOR_BOTONES, 0x12
+    STS     CONTEO_MESES, CONTADOR_BOTONES
+    JMP     RETORNO_BOTON
+
+RESTA_FECHA_UNIDADES:
+    ; Para restar en las unidades de los meses 
+    LDS     CONTADOR_BOTONES, UD_D_F
+    CPI     CONTADOR_BOTONES, 0x00   ; saltar y seguir decenas sean 0
+    BRNE    UFU_MESES_R              ; Si no, sigue con las unidades
+
+    ; Si decenas es 0, verificar unidades
+    LDS     CONTADOR_BOTONES, UD_U_F
+    CPI     CONTADOR_BOTONES, 0x01   ; si las unidades son 1 saltar 
+    BREQ    RESTA_A_12               ; Si sí, reiniciar a 12
+
+
+UFU_MESES_R:
+    ; Si las decenas no son 0, decrementar unidades
+    LDS     CONTADOR_BOTONES, UD_U_F
+    CPI     CONTADOR_BOTONES, 0x00   
+    BREQ    DECREMENTAR_DEC_R        ; Si es 0 saltar 
+
+    ; Decrementar unidades normalmente
+    DEC     CONTADOR_BOTONES
+    STS     UD_U_F, CONTADOR_BOTONES
+    JMP     RETORNO_BOTON
+
+DECREMENTAR_DEC_R:
+    ; Si las unidades llegan a 0, decrementar las decenas
+    LDS     CONTADOR_BOTONES, UD_D_F
+    DEC     CONTADOR_BOTONES
+    STS     UD_D_F, CONTADOR_BOTONES
+    LDI     CONTADOR_BOTONES, 0x09
+    STS     UD_U_F, CONTADOR_BOTONES
+
+    // Si decenas llegan a 0, volver a 12
+    CPI     CONTADOR_BOTONES, 0x00
+    BREQ    RESTA_A_12
+
+    JMP     RETORNO_BOTON
+
+RESTA_A_12:
+    LDI     CONTADOR_BOTONES, 0x02
+    STS     UD_U_F, CONTADOR_BOTONES
+    LDI     CONTADOR_BOTONES, 0x01
+    STS     UD_D_F, CONTADOR_BOTONES
+    JMP     RETORNO_BOTON
+/************************************************************SUBRUTINAS PARA EL BOTÓN DE RESTA EN MODO FECHA UNIDADES *****************************/
+RESTA_FECHA_DECENAS:
+//CARGAR EL VALOR DE LIMITE PARA UNIDADES
+	LDS		CONTADOR_BOTONES, CONTEO_MESES
+	LDI		ZH, HIGH(TABLA_DIAS_U<<1)  // Carga la parte alta de la dirección de tabla en ZH
+    LDI		ZL, LOW(TABLA_DIAS_U<<1)   // Carga la parte baja de la dirección de la tabla en ZL
+    ADD		ZL, CONTADOR_BOTONES //Sumar la posición del contador de meses
+	LPM		R16, Z
+	STS		LIMITE_U, R16
+	//CARGAR EL VALOR DEL LIMITE PARA LAS DECENAS 
+	LDS		CONTADOR_BOTONES, CONTEO_MESES
+	LDI		ZH, HIGH(TABLA_DIAS_D<<1)  // Carga la parte alta de la dirección de tabla en ZH
+    LDI		ZL, LOW(TABLA_DIAS_D<<1)   // Carga la parte baja de la dirección de la tabla en ZL
+    ADD		ZL, CONTADOR_BOTONES //Sumar la posición del contador de meses
+	LPM		R16, Z
+	STS		LIMITE_D, R16
+	//LÓGICA DE COMPARACIÓN 
+	LDS     CONTADOR_BOTONES, UD_M_F
+	CPI     CONTADOR_BOTONES, 0x00
+	BRNE    UFU_MESES_D   // Salta si no es el primer caso
+	LDS     CONTADOR_BOTONES, UD_C_F  
+    CPI		CONTADOR_BOTONES, 0x01    
+	BRNE    DECREMENTAR_UNI_D         // si es 0 saltar 
+	// si los dos son 0 establecer el contador en en los limites de la tabla
+	LDS		CONTADOR_BOTONES, LIMITE_U
+	STS		UD_C_F, CONTADOR_BOTONES   
+	LDS		CONTADOR_BOTONES, LIMITE_D
+	STS		UD_M_F, CONTADOR_BOTONES  
+	JMP		RETORNO_BOTON
+UFU_MESES_D: 
+	LDS     CONTADOR_BOTONES, UD_C_F // Si las decenas no son 0 d
+	CPI		CONTADOR_BOTONES, 0x00 // comparar con 0
+	BREQ	DECREMENTAR_DEC_D // si es 0 saltar 
+	DEC		CONTADOR_BOTONES // si no es o decrementar las unidades normalmente. 
+	STS     UD_C_F, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+
+DECREMENTAR_DEC_D:
+    // Si las unidades son 0, decrementa las decenas
+	LDS     CONTADOR_BOTONES, UD_M_F
+	DEC		CONTADOR_BOTONES
+	STS     UD_M_F, CONTADOR_BOTONES
+	// establecer las unidades en 9 
+	LDI     CONTADOR_BOTONES, 0x09
+	STS     UD_C_F, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+
+DECREMENTAR_UNI_D:
+    // Si las unidades no son 0, solo decrementarlas
+	LDS     CONTADOR_BOTONES, UD_C_F
+	DEC		CONTADOR_BOTONES
+	STS     UD_C_F, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
 
 /************************************* INTERRUPCIONES DEL T0******************************************/ 
 TMR0_ISR:
@@ -732,4 +925,6 @@ INIT_TMR1:
    	RET	
 	
 // Tabla para 7 segmentos 
-TABLA: .DB 0x7B, 0x0A, 0xB3, 0x9B, 0xCA, 0xD9, 0xF9, 0x0B, 0xFB, 0xDB, 0xEB, 0xF8, 0x71, 0xB4, 0xF1, 0xE1							 																																																																																																																																																																																																																																																																																																																																																																																																								
+TABLA: .DB 0x7B, 0x0A, 0xB3, 0x9B, 0xCA, 0xD9, 0xF9, 0x0B, 0xFB, 0xDB, 0xEB, 0xF8, 0x71, 0xB4, 0xF1, 0xE1	
+TABLA_DIAS_U: .DB 0x01, 0x08, 0x01, 0x00, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01, 0x00, 0x01	
+TABLA_DIAS_D: .DB 0x03, 0x02, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03							 																																																																																																																																																																																																																																																																																																																																																																																																								
