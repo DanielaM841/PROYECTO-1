@@ -48,6 +48,12 @@ UD_M_F:				.byte	1 ;variable para condigurar las	decenas de horas
 LIMITE_U:			.byte	1 ;variable para condigurar las	decenas de horas 
 LIMITE_D:			.byte	1 ;variable para condigurar las	decenas de horas 
 CONTEO_MESES:		.byte	1 ;variable para condigurar las	decenas de horas
+
+DIAS:				.byte	1 ; la variable que guarda el conteo de unidades de minutos 
+D_DIAS:				.byte	1 ; la variable que guarda el conteo de decenas de minutos 
+MESES:				.byte	1 ; la variable que guarda la unidades el conteo de horas 
+D_MESES:			.byte	1 ; la varible que guarda las decenas en el conteo de horas 
+
 .cseg
 .org 0x0000
     RJMP SETUP  
@@ -152,6 +158,13 @@ SETUP:
 	STS		LIMITE_D, R16
 	STS		CONTEO_MESES, R16
 	CLR		ACCION
+	LDI		R16, 0x00
+	STS		DIAS, R16	
+	STS		D_DIAS, R16	
+	LDI		R16, 0x00
+	STS		MESES, R16
+	LDI		R16, 0x00 
+	STS		D_MESES, R16
 
 	/************** ACTIVAR LAS INTERRUPCIONES GLOBALES ********/ 
 	SEI 
@@ -216,8 +229,20 @@ FECHA:
 	CBI		PORTB, 0
 	CBI		PORTB, 1
 	CBI		PORTC, 3
-	LDI		R16, 0x09
-	STS		DISPLAY1, R16
+	SBRC	ACCION, 0
+	CALL	INC_UMIN
+	SBRC	ACCION, 3
+	CALL	AUMENTO_DIAS 
+	SBRC	ACCION, 4
+	CALL	AUMENTO_MESES
+	LDS     CONTADOR_TIEMPO, MESES  ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY1, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
+	LDS     CONTADOR_TIEMPO, D_MESES ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY2, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display2
+	LDS     CONTADOR_TIEMPO, DIAS ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY3, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display3
+	LDS     CONTADOR_TIEMPO, D_DIAS ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY4, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display4
 	RJMP	MAIN
 
 C_HORA:
@@ -256,6 +281,8 @@ C_FECHA:
 	CALL	SUMA 
 	SBRC	ACCION, 2
 	CALL	RESTA
+	SBRC	ACCION, 0
+	CALL	INC_UMIN
 
 	//Suma y resta de los botones 
 	LDS     CONTADOR_BOTONES, UD_U_F  ; Tomar el valor de unidades y guardarlo en el registro 
@@ -266,15 +293,27 @@ C_FECHA:
 	STS		DISPLAY3, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 3
 	LDS     CONTADOR_BOTONES, UD_M_F  ; Tomar el valor de unidades y guardarlo en el registro 
 	STS		DISPLAY4, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
+	//Establecer el inicio en los valores de configuración de fecha 
+	LDS     CONTADOR_TIEMPO, UD_U_F 
+	STS		MESES, CONTADOR_TIEMPO
+	LDS     CONTADOR_TIEMPO, UD_D_F 
+	STS		D_MESES, CONTADOR_TIEMPO
+	LDS     CONTADOR_TIEMPO, UD_C_F 
+	STS		DIAS, CONTADOR_TIEMPO
+	LDS     CONTADOR_TIEMPO, UD_M_F 
+	STS		D_DIAS, CONTADOR_TIEMPO
 	RJMP	MAIN
-
 C_ALARMA:
+	SBRC	ACCION, 0
+	CALL	INC_UMIN
 	CBI		PORTB, 0
 	CBI		PORTB, 1
 	SBI		PORTC, 3
 	RJMP	MAIN
 
 APAGAR_ALARMA:
+	SBRC	ACCION, 0
+	CALL	INC_UMIN
 	CBI		PORTB, 0
 	CBI		PORTB, 1
 	CBI		PORTC, 3
@@ -878,6 +917,8 @@ OFDH:
 	STS     DMIN, CONTADOR_TIEMPO
 	STS     UHORAS, CONTADOR_TIEMPO
 	STS     DHORAS, CONTADOR_TIEMPO
+	LDI		R16, 0b00001000 
+	EOR		ACCION, R16
     JMP     RETORNOH
 
 OFT: 
@@ -902,6 +943,101 @@ MAX_FIN_DIA:
 	STS     UHORAS, CONTADOR_TIEMPO
 	JMP		RETORNOH
 
+AUMENTO_DIAS:
+	LDI		R16, 0b00001000 
+	EOR		ACCION, R16
+	//LÓGICA DEL AUMENTO
+	LDS		CONTADOR_BOTONES, CONTEO_MESES
+	LDI		ZH, HIGH(TABLA_DIAS_U<<1)  // Carga la parte alta de la dirección de tabla en ZH
+    LDI		ZL, LOW(TABLA_DIAS_U<<1)   // Carga la parte baja de la dirección de la tabla en ZL
+    ADD		ZL, CONTADOR_BOTONES //Sumar la posición del contador de meses
+	LPM		R16, Z
+	STS		LIMITE_U, R16
+	//CARGAR EL VALOR DEL LIMITE PARA LAS DECENAS 
+	LDS		CONTADOR_BOTONES, CONTEO_MESES
+	LDI		ZH, HIGH(TABLA_DIAS_D<<1)  // Carga la parte alta de la dirección de tabla en ZH
+    LDI		ZL, LOW(TABLA_DIAS_D<<1)   // Carga la parte baja de la dirección de la tabla en ZL
+    ADD		ZL, CONTADOR_BOTONES //Sumar la posición del contador de meses
+	LPM		R16, Z
+	STS		LIMITE_D, R16
+	//LÓGICA DE COMPARACIÓN 
+	LDS     CONTADOR_BOTONES, D_DIAS
+	LDS		R16, LIMITE_D
+    CP		CONTADOR_BOTONES, R16 //Comparar con el límite de las decenas 
+    BRNE    MES_A
+	LDS		R16, LIMITE_U
+	LDS     CONTADOR_BOTONES, DIAS
+    CP		CONTADOR_BOTONES, R16 //COMPARAR CON EL LIMITE DE UNIDADES 
+	BRNE    MAX_FIN_MESES_A
+	LDI		CONTADOR_BOTONES, 0x01
+	STS     DIAS, CONTADOR_BOTONES
+	CLR		CONTADOR_BOTONES
+	STS     D_DIAS, CONTADOR_BOTONES
+	LDI		R16, 0b00010000 
+	EOR		ACCION, R16
+	JMP		RETORNOH
+MES_A: 
+    // Incrementa las decenas y verificar si no ha exedido unidades 
+	LDS     CONTADOR_BOTONES, DIAS
+	//Ahora se le suma el contador a las unidades de los min
+	CPI		CONTADOR_BOTONES,MAX_UNI //verifica si no es 9
+	BREQ	MAX_DM_A
+	INC		CONTADOR_BOTONES		; incrementa la variable
+    STS     DIAS, CONTADOR_BOTONES
+	JMP		RETORNOH
+
+MAX_DM_A:
+	LDI     CONTADOR_BOTONES, 0x00
+    STS     DIAS, CONTADOR_BOTONES ;LIMPIAR UNIDADES 
+    LDS     CONTADOR_BOTONES, D_DIAS
+	INC		CONTADOR_BOTONES ; SUMAR EN DECENAS
+	STS     D_DIAS, CONTADOR_BOTONES
+	JMP		RETORNOH
+
+MAX_FIN_MESES_A:
+	LDS     CONTADOR_BOTONES, D_DIAS
+	INC		CONTADOR_BOTONES
+	STS     D_DIAS, CONTADOR_BOTONES
+	JMP		RETORNOH	
+AUMENTO_MESES:
+	LDI		R16, 0b00010000 
+	EOR		ACCION, R16
+	//LÓGICA DE AUMENTO DE MESES
+	LDS     CONTADOR_BOTONES, D_MESES
+    CPI		CONTADOR_BOTONES, 0x01
+    BRNE    OFU_MESES_A
+	LDS     CONTADOR_BOTONES, MESES
+    CPI		CONTADOR_BOTONES, 0x02
+	BRNE    MAX_FIN_A
+	LDI		CONTADOR_BOTONES,0x1
+	STS     MESES, CONTADOR_BOTONES
+	CLR		CONTADOR_BOTONES
+	STS     D_MESES, CONTADOR_BOTONES
+	JMP		RETORNOH
+	
+OFU_MESES_A: 
+    // Incrementar decenas Y VERIFICA SI NO ES 1 
+	LDS     CONTADOR_BOTONES, MESES
+	//Ahora se le suma el contador a las unidades de los min
+	CPI		CONTADOR_BOTONES,MAX_UNI
+	BREQ	MAX_D_A
+	INC		CONTADOR_BOTONES		; incrementa la variable
+    STS     MESES, CONTADOR_BOTONES
+	JMP		RETORNOH
+
+	
+MAX_FIN_A: 
+	LDS     CONTADOR_BOTONES, MESES
+	INC		CONTADOR_BOTONES
+	STS     MESES, CONTADOR_BOTONES
+	JMP		RETORNOH
+MAX_D_A:
+	LDI     CONTADOR_BOTONES, 0x00
+    STS     MESES, CONTADOR_BOTONES ;LIMPIAR UNIDADES 
+    LDS     CONTADOR_BOTONES, D_MESES
+	INC		CONTADOR_BOTONES
+	STS     D_MESES, CONTADOR_BOTONES
+	JMP		RETORNOH
 RETORNOH:
 	RET
 /************ CONFIGURACIÓN T0 *********/ 
