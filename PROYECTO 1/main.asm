@@ -47,13 +47,13 @@ UD_C_F:				.byte	1 ;variable para condigurar las	unidades de horas
 UD_M_F:				.byte	1 ;variable para condigurar las	decenas de horas 
 
 UD_U_A:				.byte	1 ;variable para configurar las	unidades de minutos
-UD_D_A:				.byte	1 ;variable para condigurar las	decenas de minutos 
-UD_C_A:				.byte	1 ;variable para condigurar las	unidades de horas
-UD_M_A:				.byte	1 ;variable para condigurar las	decenas de horas 
+UD_D_A:				.byte	1 ;variable para configurar las	decenas de minutos 
+UD_C_A:				.byte	1 ;variable para configurar las	unidades de horas
+UD_M_A:				.byte	1 ;variable para configurar las	decenas de horas 
 
-LIMITE_U:			.byte	1 ;variable para condigurar las	decenas de horas 
-LIMITE_D:			.byte	1 ;variable para condigurar las	decenas de horas 
-CONTEO_MESES:		.byte	1 ;variable para condigurar las	decenas de horas
+LIMITE_U:			.byte	1 ;variable para configurar los limites de las unidades de hora 
+LIMITE_D:			.byte	1 ;variable para configurar los limites de las decenas de hora 
+CONTEO_MESES:		.byte	1 ;variable para guardar el conteo de modificaciones en el mes
 
 DIAS:				.byte	1 ; la variable que guarda el conteo de unidades de minutos 
 D_DIAS:				.byte	1 ; la variable que guarda el conteo de decenas de minutos 
@@ -742,7 +742,7 @@ RESTA_HORA_UNIDADES:
 	//Ahora se le RESTA el contador a las unidades de los min
 	CPI		CONTADOR_BOTONES,0x00
 	BREQ	OUFU
-	DEC		CONTADOR_BOTONES		; incrementa la variable
+	DEC		CONTADOR_BOTONES		; decrementa la variable
     STS     UD_U_H, CONTADOR_BOTONES
 	JMP		RETORNO_BOTON
 OUFU:
