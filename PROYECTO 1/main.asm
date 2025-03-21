@@ -21,7 +21,8 @@
 .def	CONTADOR_TIEMPO = R21  
 .def	DISPLAYS = R22
 .def	CONTADOR_BOTONES= R23
-.def	ACCION = R24 
+.def	ACCION = R24
+.def	ALARMA_V = R25 
 .dseg 
 .org	SRAM_START 
 MINUTO:				.byte	1 ; para registar que ya paso un min y debe cambiar umin 
@@ -44,6 +45,11 @@ UD_U_F:				.byte	1 ;variable para configurar las	unidades de minutos
 UD_D_F:				.byte	1 ;variable para condigurar las	decenas de minutos 
 UD_C_F:				.byte	1 ;variable para condigurar las	unidades de horas
 UD_M_F:				.byte	1 ;variable para condigurar las	decenas de horas 
+
+UD_U_A:				.byte	1 ;variable para configurar las	unidades de minutos
+UD_D_A:				.byte	1 ;variable para condigurar las	decenas de minutos 
+UD_C_A:				.byte	1 ;variable para condigurar las	unidades de horas
+UD_M_A:				.byte	1 ;variable para condigurar las	decenas de horas 
 
 LIMITE_U:			.byte	1 ;variable para condigurar las	decenas de horas 
 LIMITE_D:			.byte	1 ;variable para condigurar las	decenas de horas 
@@ -123,11 +129,13 @@ SETUP:
 
 	/************** INCIALIZAR VARIABLES  ********/
 	CLR		CONTADORT0 
-	LDI		MODO, 0x03
+	LDI		MODO, 0x02
 	CLR		CONTADORT1L
 	CLR		DISPLAYS
 	CLR		CONTADOR_TIEMPO 
 	CLR		CONTADOR_BOTONES
+	CLR		ALARMA_V
+	CLR		ACCION
 	LDI		R16, 0x00
 	STS		UMIN, R16	
 	STS		DMIN, R16	
@@ -137,15 +145,24 @@ SETUP:
 	STS		DHORAS, R16
 	LDI		R16, 0x00
 	STS		MINUTO, R16
+	//VARIABLES PARA SALIDA DEL DISPLAY
 	STS		DISPLAY1, R16	
 	STS		DISPLAY2, R16	
 	STS		DISPLAY3, R16 
 	STS		DISPLAY4, R16	
+	//VARIABLES PARA LOS BOTONES 
 	STS		U_D, R16
+	//COFIGURACIÓN HORA 
 	STS		UD_U_H, R16	
 	STS		UD_D_H, R16 
 	STS		UD_C_H, R16
 	STS		UD_M_H, R16
+	//COFIGURACIÓN ALARMA
+	STS		UD_U_A, R16	
+	STS		UD_D_A, R16 
+	STS		UD_C_A, R16
+	STS		UD_M_A, R16
+	//COFIGURACIÓN FECHA
 	LDI		R16, 0x01
 	STS		UD_U_F, R16	
 	LDI		R16, 0x00
@@ -157,11 +174,11 @@ SETUP:
 	STS		LIMITE_U, R16
 	STS		LIMITE_D, R16
 	STS		CONTEO_MESES, R16
-	CLR		ACCION
-	LDI		R16, 0x00
-	STS		DIAS, R16	
+	LDI		R16, 0x01
+	STS		DIAS, R16
+	LDI		R16, 0x00	
 	STS		D_DIAS, R16	
-	LDI		R16, 0x00
+	LDI		R16, 0x01
 	STS		MESES, R16
 	LDI		R16, 0x00 
 	STS		D_MESES, R16
@@ -213,7 +230,10 @@ HORA:
 	CALL	INC_UMIN
 	SBI		PORTB, 0
 	CBI		PORTB, 1
-	CBI		PORTC, 3
+	SBI		PORTC, 3
+	CALL	ACTIVAR_ALARMA
+	//CONFIGURACIÓN DE FECHA:
+
 	LDS     CONTADOR_TIEMPO, UMIN  ; Tomar el valor de unidades y guardarlo en el registro 
 	STS		DISPLAY1, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
 	LDS     CONTADOR_TIEMPO, DMIN ; Tomar el valor de unidades y guardarlo en el registro 
@@ -222,19 +242,22 @@ HORA:
 	STS		DISPLAY3, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display3
 	LDS     CONTADOR_TIEMPO, DHORAS ; Tomar el valor de unidades y guardarlo en el registro 
 	STS		DISPLAY4, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display4
+	
 
 	RJMP	MAIN
 
 FECHA:
+	
 	CBI		PORTB, 0
-	CBI		PORTB, 1
-	CBI		PORTC, 3
+	SBI		PORTB, 1
+	SBI		PORTC, 3
 	SBRC	ACCION, 0
 	CALL	INC_UMIN
 	SBRC	ACCION, 3
 	CALL	AUMENTO_DIAS 
 	SBRC	ACCION, 4
 	CALL	AUMENTO_MESES
+	//CONFIGURACIÓN DE FECHA:
 	LDS     CONTADOR_TIEMPO, MESES  ; Tomar el valor de unidades y guardarlo en el registro 
 	STS		DISPLAY1, CONTADOR_TIEMPO ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
 	LDS     CONTADOR_TIEMPO, D_MESES ; Tomar el valor de unidades y guardarlo en el registro 
@@ -293,7 +316,7 @@ C_FECHA:
 	STS		DISPLAY3, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 3
 	LDS     CONTADOR_BOTONES, UD_M_F  ; Tomar el valor de unidades y guardarlo en el registro 
 	STS		DISPLAY4, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
-	//Establecer el inicio en los valores de configuración de fecha 
+	//CARGAR LOS VALORES DE CONFIGURACIÓN DE FECHA
 	LDS     CONTADOR_TIEMPO, UD_U_F 
 	STS		MESES, CONTADOR_TIEMPO
 	LDS     CONTADOR_TIEMPO, UD_D_F 
@@ -306,18 +329,61 @@ C_FECHA:
 C_ALARMA:
 	SBRC	ACCION, 0
 	CALL	INC_UMIN
+	SBRC	ACCION, 1
+	CALL	SUMA 
+	SBRC	ACCION, 2
+	CALL	RESTA
 	CBI		PORTB, 0
 	CBI		PORTB, 1
 	SBI		PORTC, 3
+	//Suma y resta de los botones 
+	LDS     CONTADOR_BOTONES, UD_U_A  ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY1, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
+	LDS     CONTADOR_BOTONES, UD_D_A  ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY2, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 2
+	LDS     CONTADOR_BOTONES, UD_C_A  ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY3, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 3
+	LDS     CONTADOR_BOTONES, UD_M_A  ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY4, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
 	RJMP	MAIN
 
 APAGAR_ALARMA:
+	LDS     CONTADOR_BOTONES, UD_U_A  ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY1, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
+	LDS     CONTADOR_BOTONES, UD_D_A  ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY2, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 2
+	LDS     CONTADOR_BOTONES, UD_C_A  ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY3, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 3
+	LDS     CONTADOR_BOTONES, UD_M_A  ; Tomar el valor de unidades y guardarlo en el registro 
+	STS		DISPLAY4, CONTADOR_BOTONES ; tomar el valor del registro y guardarlo en el valor que tendrá el display 1
 	SBRC	ACCION, 0
 	CALL	INC_UMIN
 	CBI		PORTB, 0
 	CBI		PORTB, 1
 	CBI		PORTC, 3
+	CBI		PORTC, 5
 	RJMP	MAIN
+/********************************************SUBRUTINAS PARA CARGAR VALORES*********************************/
+CONF_HORA:
+	LDS     CONTADOR_TIEMPO, UD_U_H 
+	STS		UMIN, CONTADOR_TIEMPO
+	LDS     CONTADOR_TIEMPO, UD_D_H 
+	STS		DMIN, CONTADOR_TIEMPO
+	LDS     CONTADOR_TIEMPO, UD_C_H 
+	STS		UHORAS, CONTADOR_TIEMPO
+	LDS     CONTADOR_TIEMPO, UD_M_H 
+	STS		DHORAS, CONTADOR_TIEMPO
+	RET 
+CONF_FECHA: 
+	LDS     CONTADOR_TIEMPO, UD_U_F 
+	STS		MESES, CONTADOR_TIEMPO
+	LDS     CONTADOR_TIEMPO, UD_D_F 
+	STS		D_MESES, CONTADOR_TIEMPO
+	LDS     CONTADOR_TIEMPO, UD_C_F 
+	STS		DIAS, CONTADOR_TIEMPO
+	LDS     CONTADOR_TIEMPO, UD_M_F 
+	STS		D_DIAS, CONTADOR_TIEMPO
+	RET 
 /************** INTERRUPCIONES PIN CHANGE  ********/
 ISR_PCINT1: 
     PUSH	R16
@@ -378,8 +444,12 @@ SUMA:
 VERIFICAR_FECHA1:
     ; Comprobar si MODO == 0x03
     CPI     MODO, 0x03
-    BRNE    LLAMAR_RETORNO    ; Si no es igual, saltar a retorno largo
+    BRNE    VERIFICAR_ALARMA   ; Si no es igual, saltar a retorno largo
     JMP     SUMA_FECHA        ; Si es igual, saltar a SUMA_FECHA
+VERIFICAR_ALARMA: 
+	CPI     MODO, 0x04
+    BRNE    LLAMAR_RETORNO   ; Si no es igual, saltar a retorno largo
+    JMP     SUMA_ALARMA        ; Si es igual, saltar a SUMA_ALARMA 
 
 LLAMAR_RETORNO:
     JMP     RETORNO_BOTON     ; Usar JMP para saltar a cualquier parte del código
@@ -562,6 +632,73 @@ MAX_FIN_MESES:
 	INC		CONTADOR_BOTONES
 	STS     UD_C_F, CONTADOR_BOTONES
 	JMP		RETORNO_BOTON
+
+/************************************************************SUBRUTINAS PARA EL BOTÓN DE SUMA EN MODO CONFIGURACIÓN DE ALARMA *****************************/
+SUMA_ALARMA: 
+	LDS     CONTADOR_BOTONES, U_D
+	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
+	BREQ	SUMA_ALARMA_UNIDADES 
+	CPI		CONTADOR_BOTONES, 0x01
+	BREQ	SUMA_ALARMA_DECENAS
+	JMP		RETORNO_BOTON
+
+SUMA_ALARMA_UNIDADES:
+	//Para solo modificar en un solo modo 
+	LDS     CONTADOR_BOTONES, UD_U_A
+	//Ahora se le suma el contador a las unidades de los min
+	CPI		CONTADOR_BOTONES,MAX_UNI
+	BREQ	OFUC_ALARMA
+	INC		CONTADOR_BOTONES		; incrementa la variable
+    STS     UD_U_A, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+OFUC_ALARMA:
+	LDI		CONTADOR_BOTONES, 0x00
+	STS     UD_U_A, CONTADOR_BOTONES ; Limpiar las unidades
+	LDS     CONTADOR_BOTONES, UD_D_A
+	INC		CONTADOR_BOTONES
+	STS     UD_D_A, CONTADOR_BOTONES
+	LDI		R16, 0x06
+	CPSE	CONTADOR_BOTONES, R16 ; Saltar la siguiente linea si son iguales 
+	JMP		RETORNO_BOTON
+	CLR		CONTADOR_BOTONES
+	STS     UD_D_A, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+	
+SUMA_ALARMA_DECENAS:
+	LDS     CONTADOR_BOTONES, UD_M_A     ; Cargar decenas de horas
+    CPI     CONTADOR_BOTONES, 0x02        ; Verificar si DHORAS == 2
+    BRNE	OFT_ALARMA		  ; Si es 2, verificar si UHORAS == 4 (24 horas)
+	LDS     CONTADOR_BOTONES, UD_C_A
+    CPI		CONTADOR_BOTONES,  0x03
+	BRNE    MAX_FIN_ALARMA ; MIENTRAS NO SEA 4 IR A LA FUNCION 
+	CLR		CONTADOR_BOTONES
+	STS     UD_U_A, CONTADOR_BOTONES
+	STS     UD_D_A, CONTADOR_BOTONES
+	STS     UD_C_A, CONTADOR_BOTONES
+	STS     UD_M_A, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+
+OFT_ALARMA: 
+    // Incrementar decenas 
+	LDS     CONTADOR_BOTONES, UD_C_A
+	//Ahora se le suma el contador a las unidades de los min
+	CPI		CONTADOR_BOTONES, MAX_UNI
+	BREQ	MAX_D_ALARMA
+	INC		CONTADOR_BOTONES 		; incrementa la variable
+    STS     UD_C_A, CONTADOR_BOTONES
+	JMP     RETORNO_BOTON 
+MAX_D_ALARMA: 
+	LDI     CONTADOR_BOTONES, 0x00
+    STS     UD_C_A, CONTADOR_BOTONES ;LIMPIAR UNIDADES 
+    LDS     CONTADOR_BOTONES,  UD_M_A
+	INC		CONTADOR_BOTONES 
+	STS     UD_M_A, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+MAX_FIN_ALARMA:
+	LDS     CONTADOR_BOTONES, UD_C_A
+	INC		CONTADOR_BOTONES
+	STS     UD_C_A, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
 //Retorno, se colocó aquí para lograr hacer los saltos con JMP y BRNE 
 RETORNO_BOTON:
 	RET
@@ -581,10 +718,17 @@ VERIFICAR_MODO:
 VERIFICAR_FECHA:
     ; Comprobar si MODO == 0x03
     CPI     MODO, 0x03
-    BRNE    LLAMAR_R        ; Si no es igual, regresar
+    BRNE    VERIFICAR_ALARMA_R       ; Si no es igual, regresar
     JMP     RESTA_FECHA          ; Si es igual, saltar a RESTA_FECHA
+
+VERIFICAR_ALARMA_R:
+    ; Comprobar si MODO == 0x04
+    CPI     MODO, 0x04
+    BRNE    LLAMAR_R        ; Si no es igual, regresar
+    JMP     RESTA_ALARMA          ; Si es igual, saltar a RESTA_FECHA
 LLAMAR_R: 
 	JMP		RETORNO_BOTON
+/************************************************************SUBRUTINAS PARA EL BOTÓN DE RESTA EN MODO CONFIGURACIÓN DE HORA *****************************/
 RESTA_HORA:
 	LDS     CONTADOR_BOTONES, U_D
 	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
@@ -720,7 +864,7 @@ RESTA_A_12:
     LDI     CONTADOR_BOTONES, 0x01
     STS     UD_D_F, CONTADOR_BOTONES
     JMP     RETORNO_BOTON
-/************************************************************SUBRUTINAS PARA EL BOTÓN DE RESTA EN MODO FECHA UNIDADES *****************************/
+/************************************************************SUBRUTINAS PARA EL BOTÓN DE RESTA EN MODO FECHA DECENAS *****************************/
 RESTA_FECHA_DECENAS:
 //CARGAR EL VALOR DE LIMITE PARA UNIDADES
 	LDS		CONTADOR_BOTONES, CONTEO_MESES
@@ -772,6 +916,74 @@ DECREMENTAR_UNI_D:
 	LDS     CONTADOR_BOTONES, UD_C_F
 	DEC		CONTADOR_BOTONES
 	STS     UD_C_F, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+/************************************************************SUBRUTINAS PARA EL BOTÓN DE RESTA EN MODO CONFIGURACIÓN DE ALARMA *****************************/
+RESTA_ALARMA:
+	LDS     CONTADOR_BOTONES, U_D
+	CPI		CONTADOR_BOTONES, 0x00 ;si el botón de suma fue el que se presionó comparar en que modo se está 
+	BREQ	RESTA_ALARMA_UNIDADES 
+	CPI		CONTADOR_BOTONES, 0x01
+	BREQ	RESTA_ALARMA_DECENAS
+	JMP		RETORNO_BOTON
+RESTA_ALARMA_UNIDADES:
+	//Para solo modificar en un solo modo 
+	LDS     CONTADOR_BOTONES, UD_U_A
+	//Ahora se le RESTA el contador a las unidades de los min
+	CPI		CONTADOR_BOTONES,0x00
+	BREQ	OUFU_A
+	DEC		CONTADOR_BOTONES		; incrementa la variable
+    STS     UD_U_A, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+OUFU_A:
+	LDI		CONTADOR_BOTONES, 0x09
+	STS     UD_U_A, CONTADOR_BOTONES ; Limpiar las unidades
+	LDS     CONTADOR_BOTONES, UD_D_A
+	CPI		CONTADOR_BOTONES, 0x00
+	BREQ	OUFU2_A
+	DEC		CONTADOR_BOTONES
+	STS     UD_D_A, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+OUFU2_A:
+	LDS     CONTADOR_BOTONES, UD_D_A
+	LDI		CONTADOR_BOTONES, 0x05
+	STS     UD_D_A, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+
+RESTA_ALARMA_DECENAS:
+	LDS     CONTADOR_BOTONES, UD_M_A
+	CPI     CONTADOR_BOTONES, 0x00
+	BRNE    UFU_ALARMA  // Salta si no es el primer caso
+	LDS     CONTADOR_BOTONES, UD_C_A  
+    CPI		CONTADOR_BOTONES, 0x00    
+	BRNE    DECREMENTAR_UNI_ALARMA         // si es 0 saltar 
+	// si los dos son 0 establecer el contador en 24
+	LDI		CONTADOR_BOTONES, 0x03
+	STS		UD_C_A, CONTADOR_BOTONES   
+	LDI		CONTADOR_BOTONES, 0x02
+	STS		UD_M_A, CONTADOR_BOTONES  
+	JMP		RETORNO_BOTON
+UFU_ALARMA: 
+	LDS     CONTADOR_BOTONES, UD_C_A // Si las decenas no son 0 d
+	CPI		CONTADOR_BOTONES, 0x00 // comparar con 0
+	BREQ	DECREMENTAR_ALARMA // si es 0 saltar 
+	DEC		CONTADOR_BOTONES // si no es o decrementar las unidades normalmente. 
+	STS     UD_C_A, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+
+DECREMENTAR_ALARMA:
+    // Si las unidades son 0, decrementa las decenas
+	LDS     CONTADOR_BOTONES, UD_M_A
+	DEC		CONTADOR_BOTONES
+	STS     UD_M_A, CONTADOR_BOTONES
+	// establecer las unidades en 9 
+	LDI     CONTADOR_BOTONES, 0x09
+	STS     UD_C_A, CONTADOR_BOTONES
+	JMP		RETORNO_BOTON
+DECREMENTAR_UNI_ALARMA:
+    // Si las unidades no son 0, solo decrementarlas
+	LDS     CONTADOR_BOTONES, UD_C_A
+	DEC		CONTADOR_BOTONES
+	STS     UD_C_A, CONTADOR_BOTONES
 	JMP		RETORNO_BOTON
 
 /************************************* INTERRUPCIONES DEL T0******************************************/ 
@@ -1059,7 +1271,36 @@ INIT_TMR1:
     STS TCCR1B, R16																																					
 
    	RET	
-	
+/*********************************************FUNCIONES PARA ENCENDER LA ALARMA**********************************************/
+ACTIVAR_ALARMA:	
+	LDS		R16, DHORAS
+	LDS		ALARMA_V, UD_M_A
+	CP		R16, ALARMA_V	
+	BREQ	VERIFICAR_UHORAS
+	JMP		RETORNO_ALARMA
+VERIFICAR_UHORAS: 
+	LDS		R16, UHORAS
+	LDS		ALARMA_V, UD_C_A
+	CP		R16, ALARMA_V	
+	BREQ	VERIFICAR_DMIN
+	JMP		RETORNO_ALARMA
+VERIFICAR_DMIN: 
+	LDS		R16, DMIN
+	LDS		ALARMA_V, UD_D_A
+	CP		R16, ALARMA_V	
+	BREQ	VERIFICAR_UMIN
+	JMP		RETORNO_ALARMA
+VERIFICAR_UMIN: 
+	LDS		R16, UMIN
+	LDS		ALARMA_V, UD_U_A
+	CP		R16, ALARMA_V	
+	BREQ	SONAR_ALARMA
+	JMP		RETORNO_ALARMA
+SONAR_ALARMA:
+	SBI		PORTC, 5
+	JMP		RETORNO_ALARMA
+RETORNO_ALARMA:
+	RET
 // Tabla para 7 segmentos 
 TABLA: .DB 0x7B, 0x0A, 0xB3, 0x9B, 0xCA, 0xD9, 0xF9, 0x0B, 0xFB, 0xDB, 0xEB, 0xF8, 0x71, 0xB4, 0xF1, 0xE1	
 TABLA_DIAS_U: .DB 0x01, 0x08, 0x01, 0x00, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01, 0x00, 0x01	
